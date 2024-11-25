@@ -1,7 +1,7 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:spotlight_ui/src/image_painter.dart';
+import 'package:spotlight_ui/src/painters.dart';
 import 'package:spotlight_ui/src/spotlight_controller.dart';
 
 class SpotlightOverlay extends StatefulWidget {
@@ -72,6 +72,28 @@ class _SpotlightOverlayState extends State<SpotlightOverlay> {
 
   @override
   Widget build(BuildContext context) {
+    double left = 0;
+    if (_highlightImages.isNotEmpty) {
+      double offset = 0;
+      double size = 0;
+      for (int i = 0; i < _highlightImages.length; i++) {
+        offset += _highlightOffsets[i].dx;
+        size += _highlightSize[i].width;
+      }
+      offset = offset / _highlightOffsets.length - 1;
+      size = size / _highlightSize.length - 1;
+      left = offset + size / 2 - 12;
+
+// Проверка, чтобы значение left не было меньше 12
+      if (left < 12) {
+        left = 12;
+      }
+
+// Проверка, чтобы значение left не выходило за пределы экрана
+      if (left > MediaQuery.of(context).size.width - 12) {
+        left = MediaQuery.of(context).size.width - 12;
+      }
+    }
     print(_highlightOffsets);
     return Stack(
       children: [
@@ -91,11 +113,21 @@ class _SpotlightOverlayState extends State<SpotlightOverlay> {
                 ImagePainter(_highlightImages[index], _highlightOffsets[index]),
           );
         }),
-        if (_highlightImages.isNotEmpty)
+        if (_highlightImages.isNotEmpty) ...[
           Positioned(
             top: _highlightOffsets[_highlightOffsets.length - 1].dy +
                 _highlightSize[_highlightSize.length - 1].height +
-                12,
+                4,
+            left: left+2,
+            child: CustomPaint(
+              size: Size(24, 12), // Размер стрелки
+              painter: ArrowPainter(), // Рисуем стрелку
+            ),
+          ),
+          Positioned(
+            top: _highlightOffsets[_highlightOffsets.length - 1].dy +
+                _highlightSize[_highlightSize.length - 1].height +
+                16,
             left: 12,
             right: 12,
             child: Container(
@@ -103,7 +135,8 @@ class _SpotlightOverlayState extends State<SpotlightOverlay> {
               width: MediaQuery.of(context).size.width,
               height: 100,
             ),
-          )
+          ),
+        ]
       ],
     );
   }
