@@ -71,6 +71,13 @@ class _SpotlightOverlayState extends State<SpotlightOverlay> {
                 ImagePainter(_highlightImages[index], _highlightOffsets[index]),
           );
         }),
+        Positioned(
+          child: Container(
+            color: Colors.amber,
+            width: 100,
+            height: 100,
+          ),
+        )
       ],
     );
   }

@@ -16,5 +16,9 @@ class SpotlightController {
     }
   }
 
+  void addKey(int step, GlobalKey key) {
+    highlightKeys[step]?.add(key);
+  }
+
   SpotlightController();
 }
