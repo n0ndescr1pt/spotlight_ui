@@ -21,6 +21,8 @@ class _SpotlightState extends State<Spotlight> {
   @override
   void initState() {
     super.initState();
+    print(_key);
+
     widget.controller.addKey(widget.step, _key);
   }
 

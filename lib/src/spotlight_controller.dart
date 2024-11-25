@@ -17,7 +17,11 @@ class SpotlightController {
   }
 
   void addKey(int step, GlobalKey key) {
-    highlightKeys[step]?.add(key);
+    if (highlightKeys.containsKey(step)) {
+      highlightKeys[step]?.add(key);
+    } else {
+      highlightKeys[step] = [key];
+    }
   }
 
   SpotlightController();

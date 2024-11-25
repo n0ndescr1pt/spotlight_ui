@@ -17,13 +17,25 @@ class SpotlightOverlay extends StatefulWidget {
 class _SpotlightOverlayState extends State<SpotlightOverlay> {
   List<ui.Image> _highlightImages = [];
   List<Offset> _highlightOffsets = [];
-
+  List<Size> _highlightSize = [];
   @override
   void initState() {
-    widget.spotlightController.currentStep.addListener(() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       _captureHighlightedWidget(widget.spotlightController.currentStep.value);
     });
+
+    widget.spotlightController.currentStep.addListener(_stepListener);
     super.initState();
+  }
+
+  void _stepListener() {
+    _captureHighlightedWidget(widget.spotlightController.currentStep.value);
+  }
+
+  @override
+  void dispose() {
+    widget.spotlightController.currentStep.removeListener(_stepListener);
+    super.dispose();
   }
 
   Future<void> _captureHighlightedWidget(int currentStep) async {
@@ -33,7 +45,6 @@ class _SpotlightOverlayState extends State<SpotlightOverlay> {
 
     //TODO проверка на долбаеба если null
     final _highlightKeys = widget.spotlightController.highlightKeys;
-
     for (int i = 0; i < _highlightKeys[currentStep]!.length; i++) {
       final RenderRepaintBoundary? boundary = _highlightKeys[currentStep]![i]
           .currentContext
@@ -49,21 +60,30 @@ class _SpotlightOverlayState extends State<SpotlightOverlay> {
         sizes.add(size);
       }
     }
-
-    _highlightImages = images;
-    _highlightOffsets = offsets;
+    print("$currentStep asdoakdpasd");
+    setState(() {
+      _highlightImages = images;
+      _highlightOffsets = offsets;
+      _highlightSize = sizes;
+    });
 
     //_animationController.forward(from: 0.0); TODOсделать
   }
 
   @override
   Widget build(BuildContext context) {
+    print(_highlightOffsets);
     return Stack(
       children: [
         widget.child,
-        DecoratedBox(
-          decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.7)), //TODO вынести
+        GestureDetector(
+          onTap: () {
+            print(widget.spotlightController.currentStep.value);
+            widget.spotlightController.nextStep();
+            print(widget.spotlightController.currentStep.value);
+          },
+          child: Container(color: Colors.black.withOpacity(0.7) //TODO вынести
+              ),
         ),
         ...List.generate(_highlightImages.length, (index) {
           return CustomPaint(
@@ -71,13 +91,19 @@ class _SpotlightOverlayState extends State<SpotlightOverlay> {
                 ImagePainter(_highlightImages[index], _highlightOffsets[index]),
           );
         }),
-        Positioned(
-          child: Container(
-            color: Colors.amber,
-            width: 100,
-            height: 100,
-          ),
-        )
+        if (_highlightImages.isNotEmpty)
+          Positioned(
+            top: _highlightOffsets[_highlightOffsets.length - 1].dy +
+                _highlightSize[_highlightSize.length - 1].height +
+                12,
+            left: 12,
+            right: 12,
+            child: Container(
+              color: Colors.white,
+              width: MediaQuery.of(context).size.width,
+              height: 100,
+            ),
+          )
       ],
     );
   }
