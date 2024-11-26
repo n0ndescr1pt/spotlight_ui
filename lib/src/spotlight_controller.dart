@@ -1,7 +1,10 @@
 import 'package:flutter/widgets.dart';
+import 'package:spotlight_ui/src/stream_manager.dart';
 
 class SpotlightController {
   final Map<int, List<GlobalKey>> highlightKeys = {};
+  final StreamManager streamManager = StreamManager();
+
   final ValueNotifier<int> currentStep = ValueNotifier<int>(0);
 
   void nextStep() {
@@ -22,6 +25,7 @@ class SpotlightController {
     } else {
       highlightKeys[step] = [key];
     }
+    streamManager.addData(true);
   }
 
   SpotlightController();

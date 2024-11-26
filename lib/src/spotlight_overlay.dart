@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:spotlight_ui/src/painters.dart';
 import 'package:spotlight_ui/src/spotlight_controller.dart';
+import 'package:spotlight_ui/src/tooltip_widget.dart';
 
 class SpotlightOverlay extends StatefulWidget {
   final Widget child;
@@ -14,16 +15,23 @@ class SpotlightOverlay extends StatefulWidget {
   State<SpotlightOverlay> createState() => _SpotlightOverlayState();
 }
 
-class _SpotlightOverlayState extends State<SpotlightOverlay> {
+class _SpotlightOverlayState extends State<SpotlightOverlay>
+    with TickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _animation;
+
   List<ui.Image> _highlightImages = [];
   List<Offset> _highlightOffsets = [];
   List<Size> _highlightSize = [];
   @override
   void initState() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _captureHighlightedWidget(widget.spotlightController.currentStep.value);
-    });
-
+    widget.spotlightController.streamManager.stream.listen((e) => print(e),
+        onDone: () => _captureHighlightedWidget(
+            widget.spotlightController.currentStep.value));
+    _animationController = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 400));
+    _animation = CurvedAnimation(
+        parent: _animationController, curve: Interval(0.0, 1.0));
     widget.spotlightController.currentStep.addListener(_stepListener);
     super.initState();
   }
@@ -66,8 +74,7 @@ class _SpotlightOverlayState extends State<SpotlightOverlay> {
       _highlightOffsets = offsets;
       _highlightSize = sizes;
     });
-
-    //_animationController.forward(from: 0.0); TODOсделать
+    _animationController.forward(from: 0.0);
   }
 
   @override
@@ -95,49 +102,59 @@ class _SpotlightOverlayState extends State<SpotlightOverlay> {
       }
     }
     print(_highlightOffsets);
-    return Stack(
-      children: [
-        widget.child,
-        GestureDetector(
-          onTap: () {
-            print(widget.spotlightController.currentStep.value);
-            widget.spotlightController.nextStep();
-            print(widget.spotlightController.currentStep.value);
-          },
-          child: Container(color: Colors.black.withOpacity(0.7) //TODO вынести
+    return AnimatedBuilder(
+        animation: _animationController,
+        builder: (context, snapshot) {
+          return Stack(
+            children: [
+              widget.child,
+              Container(
+                color: Colors.black.withOpacity(0.7), //TODO вынести
               ),
-        ),
-        ...List.generate(_highlightImages.length, (index) {
-          return CustomPaint(
-            painter:
-                ImagePainter(_highlightImages[index], _highlightOffsets[index]),
+              ...List.generate(_highlightImages.length, (index) {
+                return FadeTransition(
+                  opacity: _animation,
+                  child: CustomPaint(
+                    painter: ImagePainter(
+                        _highlightImages[index], _highlightOffsets[index]),
+                  ),
+                );
+              }),
+              if (_highlightImages.isNotEmpty) ...[
+                Positioned(
+                  top: _highlightOffsets[_highlightOffsets.length - 1].dy +
+                      _highlightSize[_highlightSize.length - 1].height +
+                      4,
+                  left: left + 2,
+                  child: FadeTransition(
+                    opacity: _animation,
+                    child: CustomPaint(
+                      size: Size(24, 12), // Размер стрелки
+                      painter: ArrowPainter(), // Рисуем стрелку
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: _highlightOffsets[_highlightOffsets.length - 1].dy +
+                      _highlightSize[_highlightSize.length - 1].height +
+                      16,
+                  left: 12,
+                  right: 12,
+                  child: FadeTransition(
+                    opacity: _animation,
+                    child: TooltipWidget(
+                      onNextStep: () {
+                        widget.spotlightController.nextStep();
+                      },
+                      onSkip: () {
+                        widget.spotlightController.prevStep();
+                      },
+                    ),
+                  ),
+                ),
+              ]
+            ],
           );
-        }),
-        if (_highlightImages.isNotEmpty) ...[
-          Positioned(
-            top: _highlightOffsets[_highlightOffsets.length - 1].dy +
-                _highlightSize[_highlightSize.length - 1].height +
-                4,
-            left: left+2,
-            child: CustomPaint(
-              size: Size(24, 12), // Размер стрелки
-              painter: ArrowPainter(), // Рисуем стрелку
-            ),
-          ),
-          Positioned(
-            top: _highlightOffsets[_highlightOffsets.length - 1].dy +
-                _highlightSize[_highlightSize.length - 1].height +
-                16,
-            left: 12,
-            right: 12,
-            child: Container(
-              color: Colors.white,
-              width: MediaQuery.of(context).size.width,
-              height: 100,
-            ),
-          ),
-        ]
-      ],
-    );
+        });
   }
 }

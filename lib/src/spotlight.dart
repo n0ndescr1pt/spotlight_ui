@@ -22,7 +22,6 @@ class _SpotlightState extends State<Spotlight> {
   void initState() {
     super.initState();
     print(_key);
-
     widget.controller.addKey(widget.step, _key);
   }
 
