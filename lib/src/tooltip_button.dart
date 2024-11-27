@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
 class TooltipButton extends StatelessWidget {
   final double? width;

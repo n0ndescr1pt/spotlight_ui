@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:spotlight_ui/src/controller_provider.dart';
 import 'package:spotlight_ui/src/painters.dart';
 import 'package:spotlight_ui/src/spotlight_controller.dart';
 import 'package:spotlight_ui/src/tooltip_widget.dart';
@@ -103,8 +104,8 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
           _highlightOffsets.last.dy + _highlightSize.last.height;
 
       if (highlightBottom + 300 > screenHeight) {
+        //TODO убрать 300 и высчитывать высоту тултип виджета
         _animationController.reverse(from: 0.25);
-        print("moreee");
         final ScrollController? controller = widget.scrollController;
 
         if (controller != null) {
@@ -144,59 +145,58 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
       }
     }
     print(_highlightOffsets);
-    return AnimatedBuilder(
-        animation: _animationController,
-        builder: (context, snapshot) {
-          return Stack(
-            children: [
-              widget.child,
-              Container(
-                color: Colors.black.withOpacity(0.7), //TODO вынести
-              ),
-              ...List.generate(_highlightImages.length, (index) {
-                return FadeTransition(
-                  opacity: _animation,
-                  child: CustomPaint(
-                    painter: ImagePainter(
-                        _highlightImages[index], _highlightOffsets[index]),
+    return ControllerProvider(
+      spotlightController: widget.spotlightController,
+      child: AnimatedBuilder(
+          animation: _animationController,
+          builder: (context, snapshot) {
+            return Stack(
+              children: [
+                widget.child,
+                GestureDetector(
+                  onTap: () => widget.spotlightController.nextStep(),
+                  child: Container(
+                    color: Colors.black.withOpacity(0.7), //TODO вынести
                   ),
-                );
-              }),
-              if (_highlightImages.isNotEmpty) ...[
-                Positioned(
-                  top: _highlightOffsets[_highlightOffsets.length - 1].dy +
-                      _highlightSize[_highlightSize.length - 1].height +
-                      4,
-                  left: left + 2,
-                  child: FadeTransition(
+                ),
+                ...List.generate(_highlightImages.length, (index) {
+                  return FadeTransition(
                     opacity: _animation,
                     child: CustomPaint(
-                      size: Size(24, 12), // Размер стрелки
-                      painter: ArrowPainter(), // Рисуем стрелку
+                      painter: ImagePainter(
+                          _highlightImages[index], _highlightOffsets[index]),
+                    ),
+                  );
+                }),
+                if (_highlightImages.isNotEmpty) ...[
+                  Positioned(
+                    top: _highlightOffsets[_highlightOffsets.length - 1].dy +
+                        _highlightSize[_highlightSize.length - 1].height +
+                        4,
+                    left: left + 2,
+                    child: FadeTransition(
+                      opacity: _animation,
+                      child: CustomPaint(
+                        size: Size(24, 12), // Размер стрелки
+                        painter: ArrowPainter(), // Рисуем стрелку
+                      ),
                     ),
                   ),
-                ),
-                Positioned(
-                  top: _highlightOffsets[_highlightOffsets.length - 1].dy +
-                      _highlightSize[_highlightSize.length - 1].height +
-                      16,
-                  left: 12,
-                  right: 12,
-                  child: FadeTransition(
-                    opacity: _animation,
-                    child: TooltipWidget(
-                      onNextStep: () {
-                        widget.spotlightController.nextStep();
-                      },
-                      onSkip: () {
-                        widget.spotlightController.prevStep();
-                      },
-                    ),
+                  Positioned(
+                    top: _highlightOffsets[_highlightOffsets.length - 1].dy +
+                        _highlightSize[_highlightSize.length - 1].height +
+                        16,
+                    left: 12,
+                    right: 12,
+                    child: FadeTransition(
+                        opacity: _animation,
+                        child: widget.spotlightController.tooltipWidgets[
+                            widget.spotlightController.currentStep.value]),
                   ),
-                ),
-              ]
-            ],
-          );
-        });
+                ]
+              ],
+            );
+          }),
+    );
   }
 }
