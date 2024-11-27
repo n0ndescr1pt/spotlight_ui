@@ -30,8 +30,9 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      widget.spotlightController.streamManager.stream.listen((e) => print(e),
-          onDone: () => _captureHighlightedWidget(
+      Future.delayed(
+          Duration(milliseconds: 400),
+          () => _captureHighlightedWidget(
               widget.spotlightController.currentStep.value));
     });
 
@@ -57,9 +58,20 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
     final List<ui.Image> images = [];
     final List<Offset> offsets = [];
     final List<Size> sizes = [];
-
-    //TODO проверка на долбаеба если null
     final _highlightKeys = widget.spotlightController.highlightKeys;
+    final RenderBox renderBox = _highlightKeys[currentStep]!
+        .last
+        .currentContext!
+        .findRenderObject() as RenderBox;
+    final Offset offset = renderBox.localToGlobal(Offset.zero);
+
+    final ScrollController? controller = widget.scrollController;
+
+    if (controller != null) {
+      final double targetOffset = offset.dy + controller.offset;
+      await _scrollToHighlightedWidget(targetOffset);
+    }
+
     for (int i = 0; i < _highlightKeys[currentStep]!.length; i++) {
       final RenderRepaintBoundary? boundary = _highlightKeys[currentStep]![i]
           .currentContext
@@ -75,31 +87,30 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
         sizes.add(size);
       }
     }
-    print("$currentStep asdoakdpasd");
     setState(() {
       _highlightImages = images;
       _highlightOffsets = offsets;
       _highlightSize = sizes;
     });
-    _scrollToHighlightedWidget();
+
     _animationController.forward(from: 0.0);
   }
 
-  void _scrollToHighlightedWidget() {
+  Future<void> _scrollToHighlightedWidget(double offset) async {
     if (_highlightOffsets.isNotEmpty && _highlightSize.isNotEmpty) {
       final double screenHeight = MediaQuery.of(context).size.height;
       final double highlightBottom =
           _highlightOffsets.last.dy + _highlightSize.last.height;
 
-      if (highlightBottom > screenHeight) {
+      if (highlightBottom + 300 > screenHeight) {
+        _animationController.reverse(from: 0.25);
+        print("moreee");
         final ScrollController? controller = widget.scrollController;
 
         if (controller != null) {
-          final double scrollOffset =
-              controller.offset + (highlightBottom - screenHeight + 20);
-
-          controller.animateTo(
-            scrollOffset,
+          print(offset);
+          await controller.animateTo(
+            offset - _highlightSize.last.height,
             duration: const Duration(milliseconds: 400),
             curve: Curves.easeInOut,
           );

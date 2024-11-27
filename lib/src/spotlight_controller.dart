@@ -25,7 +25,7 @@ class SpotlightController {
     } else {
       highlightKeys[step] = [key];
     }
-    streamManager.addData(true);
+    //streamManager.addData(true);
   }
 
   SpotlightController();
