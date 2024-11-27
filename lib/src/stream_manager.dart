@@ -6,7 +6,7 @@ class StreamManager<T> {
 
   final Duration debaunceTime;
 
-  StreamManager([this.debaunceTime = const Duration(milliseconds: 100)]);
+  StreamManager([this.debaunceTime = const Duration(milliseconds: 128)]);
 
   DateTime? _lastChangeDate;
   Timer? _timer;
@@ -26,6 +26,7 @@ class StreamManager<T> {
     if (_lastChangeDate != null &&
         _lastChangeDate!.millisecond >= debaunceTime.inMilliseconds) {
       _streamController.close();
+      _timer?.cancel();
     }
   }
 }

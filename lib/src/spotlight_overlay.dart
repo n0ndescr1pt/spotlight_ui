@@ -7,9 +7,13 @@ import 'package:spotlight_ui/src/tooltip_widget.dart';
 
 class SpotlightOverlay extends StatefulWidget {
   final Widget child;
+  final ScrollController? scrollController;
   final SpotlightController spotlightController;
   const SpotlightOverlay(
-      {super.key, required this.child, required this.spotlightController});
+      {super.key,
+      required this.child,
+      required this.spotlightController,
+      this.scrollController});
 
   @override
   State<SpotlightOverlay> createState() => _SpotlightOverlayState();
@@ -25,9 +29,12 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
   List<Size> _highlightSize = [];
   @override
   void initState() {
-    widget.spotlightController.streamManager.stream.listen((e) => print(e),
-        onDone: () => _captureHighlightedWidget(
-            widget.spotlightController.currentStep.value));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.spotlightController.streamManager.stream.listen((e) => print(e),
+          onDone: () => _captureHighlightedWidget(
+              widget.spotlightController.currentStep.value));
+    });
+
     _animationController = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 400));
     _animation = CurvedAnimation(
@@ -74,7 +81,31 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
       _highlightOffsets = offsets;
       _highlightSize = sizes;
     });
+    _scrollToHighlightedWidget();
     _animationController.forward(from: 0.0);
+  }
+
+  void _scrollToHighlightedWidget() {
+    if (_highlightOffsets.isNotEmpty && _highlightSize.isNotEmpty) {
+      final double screenHeight = MediaQuery.of(context).size.height;
+      final double highlightBottom =
+          _highlightOffsets.last.dy + _highlightSize.last.height;
+
+      if (highlightBottom > screenHeight) {
+        final ScrollController? controller = widget.scrollController;
+
+        if (controller != null) {
+          final double scrollOffset =
+              controller.offset + (highlightBottom - screenHeight + 20);
+
+          controller.animateTo(
+            scrollOffset,
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeInOut,
+          );
+        }
+      }
+    }
   }
 
   @override
