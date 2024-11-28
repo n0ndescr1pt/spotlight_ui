@@ -5,6 +5,7 @@ import 'package:spotlight_ui/src/controller_provider.dart';
 import 'package:spotlight_ui/src/tooltip_button.dart';
 
 class TooltipWidget extends StatelessWidget {
+  final EdgeInsetsGeometry? padding;
   final TooltipButton? nextStepButton;
   final TooltipButton? skipButton;
   final double? width;
@@ -23,7 +24,8 @@ class TooltipWidget extends StatelessWidget {
       this.spacing,
       this.backgroundColor,
       this.borderRadius,
-      this.child});
+      this.child,
+      this.padding});
 
   @override
   Widget build(BuildContext context) {
@@ -37,20 +39,23 @@ class TooltipWidget extends StatelessWidget {
           color: backgroundColor,
           borderRadius: BorderRadius.circular(22),
         ),
-        child: Column(
-          children: [
-            child ?? const SizedBox.shrink(),
-            SizedBox(height: spacing ?? 0),
-            GestureDetector(
-              onTap: controller.nextStep,
-              child: nextStepButton ?? const SizedBox.shrink(),
-            ),
-            SizedBox(height: spacing ?? 0),
-            GestureDetector(
-              onTap: () {},
-              child: skipButton ?? const SizedBox.shrink(),
-            ),
-          ],
+        child: Padding(
+          padding: padding ?? EdgeInsets.all(16),
+          child: Column(
+            children: [
+              child ?? const SizedBox.shrink(),
+              SizedBox(height: spacing ?? 0),
+              GestureDetector(
+                onTap: controller.nextStep,
+                child: nextStepButton ?? const SizedBox.shrink(),
+              ),
+              SizedBox(height: spacing ?? 0),
+              GestureDetector(
+                onTap: () {},
+                child: skipButton ?? const SizedBox.shrink(),
+              ),
+            ],
+          ),
         ),
       ),
     );

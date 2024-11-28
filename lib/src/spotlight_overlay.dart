@@ -4,7 +4,6 @@ import 'package:flutter/rendering.dart';
 import 'package:spotlight_ui/src/controller_provider.dart';
 import 'package:spotlight_ui/src/painters.dart';
 import 'package:spotlight_ui/src/spotlight_controller.dart';
-import 'package:spotlight_ui/src/tooltip_widget.dart';
 
 class SpotlightOverlay extends StatefulWidget {
   final Widget child;
