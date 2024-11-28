@@ -59,22 +59,14 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
     final List<ui.Image> images = [];
     final List<Offset> offsets = [];
     final List<Size> sizes = [];
-    final _highlightKeys = widget.spotlightController.highlightKeys;
-    final RenderBox renderBox = _highlightKeys[currentStep]!
-        .last
-        .currentContext!
-        .findRenderObject() as RenderBox;
-    final Offset offset = renderBox.localToGlobal(Offset.zero);
+    final highlightKeys = widget.spotlightController.highlightKeys;
 
     final ScrollController? controller = widget.scrollController;
-
     if (controller != null) {
-      final double targetOffset = offset.dy + controller.offset;
-      await _scrollToHighlightedWidget(targetOffset);
+      await _scrollToHighlightedWidget();
     }
-
-    for (int i = 0; i < _highlightKeys[currentStep]!.length; i++) {
-      final RenderRepaintBoundary? boundary = _highlightKeys[currentStep]![i]
+    for (int i = 0; i < highlightKeys[currentStep]!.length; i++) {
+      final RenderRepaintBoundary? boundary = highlightKeys[currentStep]![i]
           .currentContext
           ?.findRenderObject() as RenderRepaintBoundary?;
 
@@ -88,6 +80,7 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
         sizes.add(size);
       }
     }
+
     setState(() {
       _highlightImages = images;
       _highlightOffsets = offsets;
@@ -97,24 +90,52 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
     _animationController.forward(from: 0.0);
   }
 
-  Future<void> _scrollToHighlightedWidget(double offset) async {
-    if (_highlightOffsets.isNotEmpty && _highlightSize.isNotEmpty) {
-      final double screenHeight = MediaQuery.of(context).size.height;
-      final double highlightBottom =
-          _highlightOffsets.last.dy + _highlightSize.last.height;
+  Future<void> _scrollToHighlightedWidget() async {
+    final ScrollController controller = widget.scrollController!;
+    final highlightKeys = widget.spotlightController.highlightKeys;
+    final RenderRepaintBoundary? boundary =
+        highlightKeys[widget.spotlightController.currentStep.value]!
+            .last
+            .currentContext
+            ?.findRenderObject() as RenderRepaintBoundary?;
 
-      if (highlightBottom + 300 > screenHeight) {
-        //TODO убрать 300 и высчитывать высоту тултип виджета
+    if (boundary != null) {
+      final Offset offsetD = boundary.localToGlobal(Offset.zero);
+      final Size size = boundary.size;
+      final double offset = offsetD.dy + controller.offset;
+
+      final double screenHeight = MediaQuery.of(context).size.height;
+      final double highlightBottom = offsetD.dy + size.height;
+      final toolTipHeight = widget
+              .spotlightController
+              .tooltipWidgets[widget.spotlightController.currentStep.value]
+              ?.height ??
+          0;
+
+      if (highlightBottom + toolTipHeight + 20 > screenHeight) {
+        print(toolTipHeight);
+        print(highlightBottom);
+        print(screenHeight);
+        //TODO говно фиксить 300 старые элементы
         _animationController.reverse(from: 0.25);
         final ScrollController? controller = widget.scrollController;
 
         if (controller != null) {
-          print(offset);
-          await controller.animateTo(
-            offset - _highlightSize.last.height,
-            duration: const Duration(milliseconds: 400),
-            curve: Curves.easeInOut,
-          );
+          if (offset > controller.position.maxScrollExtent) {
+            await controller.animateTo(
+              controller.position.maxScrollExtent,
+              duration: const Duration(milliseconds: 400),
+              curve: Curves.easeInOut,
+            );
+          }
+          // Иначе скроллим до рассчитанного оффсета
+          else if (offset > controller.position.pixels) {
+            await controller.animateTo(
+              offset,
+              duration: const Duration(milliseconds: 400),
+              curve: Curves.easeInOut,
+            );
+          }
         }
       }
     }
@@ -122,6 +143,25 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
 
   @override
   Widget build(BuildContext context) {
+    bool isAbove = false;
+    final tooltipHeight = widget
+            .spotlightController
+            .tooltipWidgets[widget.spotlightController.currentStep.value]
+            ?.height ??
+        0;
+
+    if (_highlightImages.isNotEmpty &&
+        _highlightOffsets.last.dy +
+                _highlightSize.last.height +
+                tooltipHeight +
+                20 >
+            MediaQuery.of(context).size.height) {
+      print("  ");
+      print(tooltipHeight);
+      print(_highlightOffsets.last.dy + _highlightSize.last.height);
+      print(MediaQuery.of(context).size.height);
+      isAbove = true;
+    }
     double left = 0;
     if (_highlightImages.isNotEmpty) {
       double offset = 0;
@@ -170,22 +210,30 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
                 }),
                 if (_highlightImages.isNotEmpty) ...[
                   Positioned(
-                    top: _highlightOffsets[_highlightOffsets.length - 1].dy +
-                        _highlightSize[_highlightSize.length - 1].height +
-                        4,
+                    top: isAbove
+                        ? _highlightOffsets[_highlightOffsets.length - 1].dy -
+                            12
+                        : _highlightOffsets[_highlightOffsets.length - 1].dy +
+                            _highlightSize[_highlightSize.length - 1].height +
+                            4,
                     left: left + 2,
                     child: FadeTransition(
                       opacity: _animation,
                       child: CustomPaint(
                         size: Size(24, 12), // Размер стрелки
-                        painter: ArrowPainter(), // Рисуем стрелку
+                        painter:
+                            ArrowPainter(isAbove: isAbove), // Рисуем стрелку
                       ),
                     ),
                   ),
                   Positioned(
-                    top: _highlightOffsets[_highlightOffsets.length - 1].dy +
-                        _highlightSize[_highlightSize.length - 1].height +
-                        16,
+                    top: isAbove
+                        ? _highlightOffsets[_highlightOffsets.length - 1].dy -
+                            tooltipHeight -
+                            12
+                        : _highlightOffsets[_highlightOffsets.length - 1].dy +
+                            _highlightSize[_highlightSize.length - 1].height +
+                            16,
                     left: 12,
                     right: 12,
                     child: FadeTransition(
