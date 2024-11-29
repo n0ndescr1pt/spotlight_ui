@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:spotlight_ui/spotlight_ui.dart';
 import 'package:spotlight_ui/src/controller_provider.dart';
-import 'package:spotlight_ui/src/tooltip_button.dart';
 
 class TooltipWidget extends StatelessWidget {
   final EdgeInsetsGeometry? padding;
@@ -40,7 +39,7 @@ class TooltipWidget extends StatelessWidget {
           borderRadius: BorderRadius.circular(22),
         ),
         child: Padding(
-          padding: padding ?? EdgeInsets.all(16),
+          padding: padding ?? const EdgeInsets.all(16),
           child: Column(
             children: [
               child ?? const SizedBox.shrink(),
@@ -61,3 +60,6 @@ class TooltipWidget extends StatelessWidget {
     );
   }
 }
+
+
+///final TooltipWidget = 

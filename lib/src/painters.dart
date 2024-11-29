@@ -1,7 +1,6 @@
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 
 class ImagePainter extends CustomPainter {
   final Offset offset;
@@ -12,15 +11,12 @@ class ImagePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Масштабируем изображение с учетом pixelRatio
     final scaledWidth = image.width / pixelRatio;
     final scaledHeight = image.height / pixelRatio;
 
-    // Создаем целевой прямоугольник для рисования изображения
     final dstRect =
         Rect.fromLTWH(offset.dx, offset.dy, scaledWidth, scaledHeight);
 
-    // Рисуем изображение с учетом pixelRatio
     canvas.drawImageRect(
         image,
         Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
@@ -35,23 +31,24 @@ class ImagePainter extends CustomPainter {
 }
 
 class ArrowPainter extends CustomPainter {
+  final ArrowSettings arrowSettings;
   final bool isAbove;
 
-  ArrowPainter({this.isAbove = false});
+  ArrowPainter({this.isAbove = false, required this.arrowSettings});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final Paint paint = Paint()..color = Colors.white;
+    final Paint paint = Paint()..color = arrowSettings.color;
     final Path path = Path();
 
     if (isAbove) {
       path.moveTo(0, 0);
-      path.lineTo(size.width / 2, size.height);
+      path.lineTo(arrowSettings.size.width / 2, arrowSettings.size.height);
       path.lineTo(size.width, 0);
     } else {
-      path.moveTo(0, size.height);
-      path.lineTo(size.width / 2, 0);
-      path.lineTo(size.width, size.height);
+      path.moveTo(0, arrowSettings.size.height);
+      path.lineTo(arrowSettings.size.width / 2, 0);
+      path.lineTo(arrowSettings.size.width, arrowSettings.size.height);
     }
 
     path.close();
@@ -60,4 +57,12 @@ class ArrowPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(CustomPainter oldDelegate) => false;
+}
+
+class ArrowSettings {
+  final Color color;
+  final Size size;
+
+  const ArrowSettings(
+      {this.color = Colors.white, this.size = const Size(24, 12)});
 }

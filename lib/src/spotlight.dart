@@ -18,19 +18,18 @@ class Spotlight extends StatefulWidget {
 }
 
 class _SpotlightState extends State<Spotlight> {
-  int i = 0;
   final GlobalKey _key = GlobalKey();
   @override
   void initState() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final controller = ControllerProvider.of(context)!.spotlightController;
+      controller.addStep(widget.step, _key, tooltip: widget.tooltip);
+    });
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    final SpotlightController controller =
-        ControllerProvider.of(context)!.spotlightController;
-    if (i < 1) controller.addKey(widget.step, _key, widget.tooltip);
-    i++; //TODO что то придумать
     return RepaintBoundary(
       key: _key,
       child: widget.child,

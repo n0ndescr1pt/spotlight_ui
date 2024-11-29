@@ -9,11 +9,19 @@ class SpotlightOverlay extends StatefulWidget {
   final Widget child;
   final ScrollController? scrollController;
   final SpotlightController spotlightController;
-  const SpotlightOverlay(
-      {super.key,
-      required this.child,
-      required this.spotlightController,
-      this.scrollController});
+  final Duration animationDuration;
+  final Duration scrollAnimationDuration;
+  final ArrowSettings arrowSettings;
+  const SpotlightOverlay({
+    super.key,
+    required this.child,
+    required this.spotlightController,
+    this.scrollController,
+    this.animationDuration = const Duration(milliseconds: 400),
+    this.scrollAnimationDuration = const Duration(milliseconds: 400),
+    this.arrowSettings =
+        const ArrowSettings(color: Colors.white, size: Size(24, 12)),
+  });
 
   @override
   State<SpotlightOverlay> createState() => _SpotlightOverlayState();
@@ -21,6 +29,8 @@ class SpotlightOverlay extends StatefulWidget {
 
 class _SpotlightOverlayState extends State<SpotlightOverlay>
     with TickerProviderStateMixin {
+  late Map<int, SpotlightStep> steps;
+  late SpotlightController spotlightController;
   late AnimationController _animationController;
   late Animation<double> _animation;
 
@@ -29,43 +39,44 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
   List<Size> _highlightSize = [];
   @override
   void initState() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Future.delayed(
-          Duration(milliseconds: 400),
-          () => _captureHighlightedWidget(
-              widget.spotlightController.currentStep.value));
-    });
-
-    _animationController = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 400));
-    _animation = CurvedAnimation(
-        parent: _animationController, curve: Interval(0.0, 1.0));
-    widget.spotlightController.currentStep.addListener(_stepListener);
+    steps = widget.spotlightController.steps;
+    spotlightController = widget.spotlightController;
+    _initHighlight();
+    _buildAnimation();
+    spotlightController.currentStep.addListener(_stepListener);
     super.initState();
   }
 
-  void _stepListener() {
-    _captureHighlightedWidget(widget.spotlightController.currentStep.value);
+  void _initHighlight() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(
+          const Duration(milliseconds: 400),
+          () =>
+              _captureHighlightedWidget(spotlightController.currentStep.value));
+    });
   }
 
-  @override
-  void dispose() {
-    widget.spotlightController.currentStep.removeListener(_stepListener);
-    super.dispose();
+  void _buildAnimation() {
+    _animationController =
+        AnimationController(vsync: this, duration: widget.animationDuration);
+    _animation = CurvedAnimation(
+        parent: _animationController, curve: const Interval(0.0, 1.0));
+  }
+
+  void _stepListener() {
+    _captureHighlightedWidget(spotlightController.currentStep.value);
   }
 
   Future<void> _captureHighlightedWidget(int currentStep) async {
     final List<ui.Image> images = [];
     final List<Offset> offsets = [];
     final List<Size> sizes = [];
-    final highlightKeys = widget.spotlightController.highlightKeys;
 
-    final ScrollController? controller = widget.scrollController;
-    if (controller != null) {
-      await _scrollToHighlightedWidget();
-    }
-    for (int i = 0; i < highlightKeys[currentStep]!.length; i++) {
-      final RenderRepaintBoundary? boundary = highlightKeys[currentStep]![i]
+    await _scrollToHighlightedWidget();
+
+    for (int i = 0; i < steps[currentStep]!.highlightKeys.length; i++) {
+      final RenderRepaintBoundary? boundary = steps[currentStep]!
+          .highlightKeys[i]
           .currentContext
           ?.findRenderObject() as RenderRepaintBoundary?;
 
@@ -90,160 +101,165 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
   }
 
   Future<void> _scrollToHighlightedWidget() async {
-    final ScrollController controller = widget.scrollController!;
-    final highlightKeys = widget.spotlightController.highlightKeys;
+    final ScrollController? controller = widget.scrollController;
+    if (controller == null) return;
+
+    final highlightKeys =
+        spotlightController.steps[spotlightController.currentStep.value];
     final RenderRepaintBoundary? boundary =
-        highlightKeys[widget.spotlightController.currentStep.value]!
-            .last
-            .currentContext
-            ?.findRenderObject() as RenderRepaintBoundary?;
+        highlightKeys!.highlightKeys.last.currentContext?.findRenderObject()
+            as RenderRepaintBoundary?;
 
     if (boundary != null) {
-      final Offset offsetD = boundary.localToGlobal(Offset.zero);
+      final Offset offset = boundary.localToGlobal(Offset.zero);
+      final double targetOffset = offset.dy + controller.offset;
       final Size size = boundary.size;
-      final double offset = offsetD.dy + controller.offset;
 
       final double screenHeight = MediaQuery.of(context).size.height;
-      final double highlightBottom = offsetD.dy + size.height;
-      final toolTipHeight = widget
-              .spotlightController
-              .tooltipWidgets[widget.spotlightController.currentStep.value]
-              ?.height ??
+      final double highlightBottom = offset.dy + size.height;
+      final toolTipHeight = spotlightController
+              .steps[spotlightController.currentStep.value]?.tooltip.height ??
           0;
 
       if (highlightBottom + toolTipHeight + 20 > screenHeight) {
-        print(toolTipHeight);
-        print(highlightBottom);
-        print(screenHeight);
-        //TODO говно фиксить 300 старые элементы
         _animationController.reverse(from: 0.25);
-        final ScrollController? controller = widget.scrollController;
 
-        if (controller != null) {
-          if (offset > controller.position.maxScrollExtent) {
-            await controller.animateTo(
-              controller.position.maxScrollExtent,
-              duration: const Duration(milliseconds: 400),
-              curve: Curves.easeInOut,
-            );
-          }
-          // Иначе скроллим до рассчитанного оффсета
-          else if (offset > controller.position.pixels) {
-            await controller.animateTo(
-              offset,
-              duration: const Duration(milliseconds: 400),
-              curve: Curves.easeInOut,
-            );
-          }
+        if (targetOffset > controller.position.maxScrollExtent) {
+          await controller.animateTo(
+            controller.position.maxScrollExtent,
+            duration: widget.scrollAnimationDuration,
+            curve: Curves.easeInOut,
+          );
+        } else if (targetOffset > controller.position.pixels) {
+          await controller.animateTo(
+            targetOffset,
+            duration: widget.scrollAnimationDuration,
+            curve: Curves.easeInOut,
+          );
         }
       }
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    bool isAbove = false;
-    final tooltipHeight = widget
-            .spotlightController
-            .tooltipWidgets[widget.spotlightController.currentStep.value]
-            ?.height ??
-        0;
+  double _clamp(double value, double min, double max) {
+    return value.clamp(min, max);
+  }
 
+  double _calculateLeftOffset() {
+    double offset = 0, size = 0;
+    for (int i = 0; i < _highlightImages.length; i++) {
+      offset += _highlightOffsets[i].dx;
+      size += _highlightSize[i].width;
+    }
+    offset /= _highlightOffsets.length;
+    size /= _highlightSize.length;
+    return offset + size / 2 - 12;
+  }
+
+  bool _calculateIsAboveTooltip(double tooltipHeight) {
     if (_highlightImages.isNotEmpty &&
         _highlightOffsets.last.dy +
                 _highlightSize.last.height +
                 tooltipHeight +
                 20 >
             MediaQuery.of(context).size.height) {
-      print("  ");
-      print(tooltipHeight);
-      print(_highlightOffsets.last.dy + _highlightSize.last.height);
-      print(MediaQuery.of(context).size.height);
-      isAbove = true;
+      return true;
     }
+    return false;
+  }
+
+  List<Widget> _buildHighlightWidgets() {
+    return List.generate(_highlightImages.length, (index) {
+      return FadeTransition(
+        opacity: _animation,
+        child: CustomPaint(
+          painter:
+              ImagePainter(_highlightImages[index], _highlightOffsets[index]),
+        ),
+      );
+    });
+  }
+
+  Widget _buildArrowWidget(
+    bool isAbove,
+    double left,
+  ) {
+    return Positioned(
+      top: isAbove
+          ? _highlightOffsets.last.dy - 12
+          : _highlightOffsets.last.dy + _highlightSize.last.height + 4,
+      left: left + 2,
+      child: FadeTransition(
+        opacity: _animation,
+        child: CustomPaint(
+          painter: ArrowPainter(
+            isAbove: isAbove,
+            arrowSettings: widget.arrowSettings,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTooltipWidget(bool isAbove, double tooltipHeight) {
+    return Positioned(
+      top: isAbove
+          ? _highlightOffsets.last.dy - tooltipHeight - 12
+          : _highlightOffsets.last.dy + _highlightSize.last.height + 16,
+      left: 12,
+      right: 12,
+      child: FadeTransition(
+          opacity: _animation,
+          child: widget.spotlightController
+              .steps[widget.spotlightController.currentStep.value]!.tooltip),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tooltipHeight = widget
+            .spotlightController
+            .steps[widget.spotlightController.currentStep.value]
+            ?.tooltip
+            .height ??
+        0;
+    bool isAbove = false;
     double left = 0;
     if (_highlightImages.isNotEmpty) {
-      double offset = 0;
-      double size = 0;
-      for (int i = 0; i < _highlightImages.length; i++) {
-        offset += _highlightOffsets[i].dx;
-        size += _highlightSize[i].width;
-      }
-      offset = offset / _highlightOffsets.length - 1;
-      size = size / _highlightSize.length - 1;
-      left = offset + size / 2 - 12;
-
-// Проверка, чтобы значение left не было меньше 12
-      if (left < 12) {
-        left = 12;
-      }
-
-// Проверка, чтобы значение left не выходило за пределы экрана
-      if (left > MediaQuery.of(context).size.width - 12) {
-        left = MediaQuery.of(context).size.width - 12;
-      }
+      left = _clamp(
+          _calculateLeftOffset(), 12, MediaQuery.of(context).size.width - 12);
+      isAbove = _calculateIsAboveTooltip(tooltipHeight);
     }
-    print(_highlightOffsets);
     return ControllerProvider(
       spotlightController: widget.spotlightController,
       child: AnimatedBuilder(
-          animation: _animationController,
-          builder: (context, snapshot) {
-            return Stack(
-              children: [
-                widget.child,
-                GestureDetector(
-                  onTap: () => widget.spotlightController.nextStep(),
-                  child: Container(
-                    color: Colors.black.withOpacity(0.7), //TODO вынести
-                  ),
+        animation: _animationController,
+        builder: (context, snapshot) {
+          return Stack(
+            children: [
+              widget.child,
+              GestureDetector(
+                onTap: () => widget.spotlightController.nextStep(),
+                child: Container(
+                  color: Colors.black.withOpacity(0.7), //TODO вынести
                 ),
-                ...List.generate(_highlightImages.length, (index) {
-                  return FadeTransition(
-                    opacity: _animation,
-                    child: CustomPaint(
-                      painter: ImagePainter(
-                          _highlightImages[index], _highlightOffsets[index]),
-                    ),
-                  );
-                }),
-                if (_highlightImages.isNotEmpty) ...[
-                  Positioned(
-                    top: isAbove
-                        ? _highlightOffsets[_highlightOffsets.length - 1].dy -
-                            12
-                        : _highlightOffsets[_highlightOffsets.length - 1].dy +
-                            _highlightSize[_highlightSize.length - 1].height +
-                            4,
-                    left: left + 2,
-                    child: FadeTransition(
-                      opacity: _animation,
-                      child: CustomPaint(
-                        size: Size(24, 12), // Размер стрелки
-                        painter:
-                            ArrowPainter(isAbove: isAbove), // Рисуем стрелку
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    top: isAbove
-                        ? _highlightOffsets[_highlightOffsets.length - 1].dy -
-                            tooltipHeight -
-                            12
-                        : _highlightOffsets[_highlightOffsets.length - 1].dy +
-                            _highlightSize[_highlightSize.length - 1].height +
-                            16,
-                    left: 12,
-                    right: 12,
-                    child: FadeTransition(
-                        opacity: _animation,
-                        child: widget.spotlightController.tooltipWidgets[
-                            widget.spotlightController.currentStep.value]),
-                  ),
-                ]
-              ],
-            );
-          }),
+              ),
+              ..._buildHighlightWidgets(),
+              if (_highlightImages.isNotEmpty) ...[
+                _buildArrowWidget(isAbove, left),
+                _buildTooltipWidget(isAbove, tooltipHeight),
+              ]
+            ],
+          );
+        },
+      ),
     );
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    widget.spotlightController.currentStep.removeListener(_stepListener);
+    super.dispose();
   }
 }

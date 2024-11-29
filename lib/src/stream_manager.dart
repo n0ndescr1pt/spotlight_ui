@@ -4,9 +4,9 @@ class StreamManager<T> {
   final StreamController<T> _streamController = StreamController<T>();
   Stream<T> get stream => _streamController.stream;
 
-  final Duration debaunceTime;
+  final Duration debounceTime;
 
-  StreamManager([this.debaunceTime = const Duration(milliseconds: 128)]);
+  StreamManager([this.debounceTime = const Duration(milliseconds: 128)]);
 
   DateTime? _lastChangeDate;
   Timer? _timer;
@@ -19,12 +19,12 @@ class StreamManager<T> {
 
   _resetTimer() {
     _timer?.cancel();
-    _timer = Timer(debaunceTime, _checkIsStreamStale);
+    _timer = Timer(debounceTime, _checkIsStreamStale);
   }
 
   _checkIsStreamStale() {
     if (_lastChangeDate != null &&
-        _lastChangeDate!.millisecond >= debaunceTime.inMilliseconds) {
+        _lastChangeDate!.millisecond >= debounceTime.inMilliseconds) {
       _streamController.close();
       _timer?.cancel();
     }
