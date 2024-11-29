@@ -194,7 +194,6 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
         child: CustomPaint(
           painter: ArrowPainter(
             isAbove: isAbove,
-            arrowSettings: widget.arrowSettings,
           ),
         ),
       ),
@@ -210,18 +209,15 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
       right: 12,
       child: FadeTransition(
           opacity: _animation,
-          child: widget.spotlightController
-              .steps[widget.spotlightController.currentStep.value]!.tooltip),
+          child: spotlightController
+              .steps[spotlightController.currentStep.value]!.tooltip),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final tooltipHeight = widget
-            .spotlightController
-            .steps[widget.spotlightController.currentStep.value]
-            ?.tooltip
-            .height ??
+    final tooltipHeight = spotlightController
+            .steps[spotlightController.currentStep.value]?.tooltip.height ??
         0;
     bool isAbove = false;
     double left = 0;
@@ -231,7 +227,7 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
       isAbove = _calculateIsAboveTooltip(tooltipHeight);
     }
     return ControllerProvider(
-      spotlightController: widget.spotlightController,
+      spotlightController: spotlightController,
       child: AnimatedBuilder(
         animation: _animationController,
         builder: (context, snapshot) {
@@ -239,7 +235,7 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
             children: [
               widget.child,
               GestureDetector(
-                onTap: () => widget.spotlightController.nextStep(),
+                onTap: () => spotlightController.nextStep(),
                 child: Container(
                   color: Colors.black.withOpacity(0.7), //TODO вынести
                 ),

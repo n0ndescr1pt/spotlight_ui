@@ -31,24 +31,23 @@ class ImagePainter extends CustomPainter {
 }
 
 class ArrowPainter extends CustomPainter {
-  final ArrowSettings arrowSettings;
   final bool isAbove;
 
-  ArrowPainter({this.isAbove = false, required this.arrowSettings});
+  ArrowPainter({this.isAbove = false});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final Paint paint = Paint()..color = arrowSettings.color;
+    final Paint paint = Paint()..color = Colors.white;
     final Path path = Path();
 
     if (isAbove) {
       path.moveTo(0, 0);
-      path.lineTo(arrowSettings.size.width / 2, arrowSettings.size.height);
+      path.lineTo(size.width / 2, size.height);
       path.lineTo(size.width, 0);
     } else {
-      path.moveTo(0, arrowSettings.size.height);
-      path.lineTo(arrowSettings.size.width / 2, 0);
-      path.lineTo(arrowSettings.size.width, arrowSettings.size.height);
+      path.moveTo(0, size.height);
+      path.lineTo(size.width / 2, 0);
+      path.lineTo(size.width, size.height);
     }
 
     path.close();
