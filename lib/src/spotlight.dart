@@ -22,8 +22,9 @@ class _SpotlightState extends State<Spotlight> {
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final controller = ControllerProvider.of(context)!.spotlightController;
-      controller.addStep(widget.step, _key, tooltip: widget.tooltip);
+      final controller = ControllerProvider.of(context)?.spotlightController;
+
+      controller?.addStep(widget.step, _key, tooltip: widget.tooltip);
     });
     super.initState();
   }

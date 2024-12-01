@@ -2,7 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:spotlight_ui/spotlight_ui.dart';
 
 class ControllerProvider extends InheritedWidget {
-  final SpotlightController spotlightController;
+  final SpotlightController? spotlightController;
 
   const ControllerProvider({
     super.key,

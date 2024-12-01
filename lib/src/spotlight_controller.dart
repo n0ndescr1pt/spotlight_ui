@@ -7,6 +7,10 @@ class SpotlightController {
   //final StreamManager streamManager = StreamManager();
   final ValueNotifier<int> currentStep = ValueNotifier<int>(0);
 
+
+  SpotlightController();
+
+
   void nextStep() {
     if (currentStep.value < steps.length - 1) {
       currentStep.value++;
@@ -27,14 +31,15 @@ class SpotlightController {
       step,
       () => SpotlightStep(
         highlightKeys: [],
-        tooltip: tooltip ?? TooltipWidget(), // TODO Установить дефолтный тултип
+        tooltip: tooltip ??
+            TooltipWidget(
+              height: 200,
+            ), // TODO Установить дефолтный тултип
       ),
     );
     //streamManager.addData(true);///TODO
     spotlightStep.highlightKeys.add(key);
   }
-
-  SpotlightController();
 }
 
 class SpotlightStep {

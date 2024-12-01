@@ -8,7 +8,7 @@ class TooltipWidget extends StatelessWidget {
   final TooltipButton? nextStepButton;
   final TooltipButton? skipButton;
   final double? width;
-  final double? height;
+  final double height;
   final double? spacing;
   final Color? backgroundColor;
   final BorderRadiusGeometry? borderRadius;
@@ -19,7 +19,7 @@ class TooltipWidget extends StatelessWidget {
       this.nextStepButton,
       this.skipButton,
       this.width,
-      this.height,
+      required this.height,
       this.spacing,
       this.backgroundColor,
       this.borderRadius,
@@ -28,8 +28,8 @@ class TooltipWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final SpotlightController controller =
-        ControllerProvider.of(context)!.spotlightController;
+    final SpotlightController? controller =
+        ControllerProvider.of(context)?.spotlightController;
     return SizedBox(
       width: width ?? MediaQuery.of(context).size.width,
       height: height,
@@ -45,7 +45,7 @@ class TooltipWidget extends StatelessWidget {
               child ?? const SizedBox.shrink(),
               SizedBox(height: spacing ?? 0),
               GestureDetector(
-                onTap: controller.nextStep,
+                onTap: controller?.nextStep,
                 child: nextStepButton ?? const SizedBox.shrink(),
               ),
               SizedBox(height: spacing ?? 0),

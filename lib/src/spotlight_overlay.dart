@@ -12,8 +12,10 @@ class SpotlightOverlay extends StatefulWidget {
   final Duration animationDuration;
   final Duration scrollAnimationDuration;
   final ArrowSettings arrowSettings;
+  final bool isEnabled;
   const SpotlightOverlay({
     super.key,
+    this.isEnabled = true,
     required this.child,
     required this.spotlightController,
     this.scrollController,
@@ -33,24 +35,28 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
   late SpotlightController spotlightController;
   late AnimationController _animationController;
   late Animation<double> _animation;
+  late bool isEnable;
 
   List<ui.Image> _highlightImages = [];
   List<Offset> _highlightOffsets = [];
   List<Size> _highlightSize = [];
   @override
   void initState() {
+    isEnable = widget.isEnabled;
     steps = widget.spotlightController.steps;
     spotlightController = widget.spotlightController;
+
     _initHighlight();
     _buildAnimation();
     spotlightController.currentStep.addListener(_stepListener);
+
     super.initState();
   }
 
   void _initHighlight() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future.delayed(
-          const Duration(milliseconds: 400),
+          const Duration(milliseconds: 900),
           () =>
               _captureHighlightedWidget(spotlightController.currentStep.value));
     });
@@ -71,12 +77,12 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
     final List<ui.Image> images = [];
     final List<Offset> offsets = [];
     final List<Size> sizes = [];
-
+    await WidgetsBinding.instance.endOfFrame;
     await _scrollToHighlightedWidget();
-
-    for (int i = 0; i < steps[currentStep]!.highlightKeys.length; i++) {
-      final RenderRepaintBoundary? boundary = steps[currentStep]!
-          .highlightKeys[i]
+    final length = steps[currentStep]?.highlightKeys.length ?? 0;
+    for (int i = 0; i < length; i++) {
+      final RenderRepaintBoundary? boundary = steps[currentStep]
+          ?.highlightKeys[i]
           .currentContext
           ?.findRenderObject() as RenderRepaintBoundary?;
 
@@ -107,12 +113,12 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
     final highlightKeys =
         spotlightController.steps[spotlightController.currentStep.value];
     final RenderRepaintBoundary? boundary =
-        highlightKeys!.highlightKeys.last.currentContext?.findRenderObject()
+        highlightKeys?.highlightKeys.last.currentContext?.findRenderObject()
             as RenderRepaintBoundary?;
 
     if (boundary != null) {
       final Offset offset = boundary.localToGlobal(Offset.zero);
-      final double targetOffset = offset.dy + controller.offset;
+      final double targetOffset = offset.dy / 1.3 + controller.offset;
       final Size size = boundary.size;
 
       final double screenHeight = MediaQuery.of(context).size.height;
@@ -120,16 +126,21 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
       final toolTipHeight = spotlightController
               .steps[spotlightController.currentStep.value]?.tooltip.height ??
           0;
-
+      print(controller.position.maxScrollExtent);
+      print(controller.offset);
+      print(offset.dy);
+      print("TOOLTIP  $toolTipHeight");
       if (highlightBottom + toolTipHeight + 20 > screenHeight) {
-        _animationController.reverse(from: 0.25);
+        _animationController.reverse(from: 0.0);
 
         if (targetOffset > controller.position.maxScrollExtent) {
+          print("scrolling...");
           await controller.animateTo(
             controller.position.maxScrollExtent,
             duration: widget.scrollAnimationDuration,
             curve: Curves.easeInOut,
           );
+          //TODO сделать если скролить надо много то количество времени больше
         } else if (targetOffset > controller.position.pixels) {
           await controller.animateTo(
             targetOffset,
@@ -158,11 +169,12 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
 
   bool _calculateIsAboveTooltip(double tooltipHeight) {
     if (_highlightImages.isNotEmpty &&
-        _highlightOffsets.last.dy +
-                _highlightSize.last.height +
+        _highlightOffsets.first.dy +
+                _highlightSize.first.height +
                 tooltipHeight +
                 20 >
             MediaQuery.of(context).size.height) {
+      print("true");
       return true;
     }
     return false;
@@ -187,11 +199,12 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
     return Positioned(
       top: isAbove
           ? _highlightOffsets.last.dy - 12
-          : _highlightOffsets.last.dy + _highlightSize.last.height + 4,
-      left: left + 2,
+          : _highlightOffsets.first.dy + _highlightSize.first.height + 4,
+      left: left,
       child: FadeTransition(
         opacity: _animation,
         child: CustomPaint(
+          size: Size(24, 12),
           painter: ArrowPainter(
             isAbove: isAbove,
           ),
@@ -201,10 +214,11 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
   }
 
   Widget _buildTooltipWidget(bool isAbove, double tooltipHeight) {
+    print("      asdfsdfsdfs$tooltipHeight");
     return Positioned(
       top: isAbove
           ? _highlightOffsets.last.dy - tooltipHeight - 12
-          : _highlightOffsets.last.dy + _highlightSize.last.height + 16,
+          : _highlightOffsets.first.dy + _highlightSize.first.height + 16,
       left: 12,
       right: 12,
       child: FadeTransition(
@@ -216,40 +230,44 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
 
   @override
   Widget build(BuildContext context) {
-    final tooltipHeight = spotlightController
-            .steps[spotlightController.currentStep.value]?.tooltip.height ??
-        0;
-    bool isAbove = false;
-    double left = 0;
-    if (_highlightImages.isNotEmpty) {
-      left = _clamp(
-          _calculateLeftOffset(), 12, MediaQuery.of(context).size.width - 12);
-      isAbove = _calculateIsAboveTooltip(tooltipHeight);
-    }
-    return ControllerProvider(
-      spotlightController: spotlightController,
-      child: AnimatedBuilder(
-        animation: _animationController,
-        builder: (context, snapshot) {
-          return Stack(
-            children: [
-              widget.child,
-              GestureDetector(
-                onTap: () => spotlightController.nextStep(),
-                child: Container(
-                  color: Colors.black.withOpacity(0.7), //TODO вынести
+    if (isEnable) {
+      final tooltipHeight = spotlightController
+              .steps[spotlightController.currentStep.value]?.tooltip.height ??
+          0;
+      bool isAbove = false;
+      double left = 0;
+      if (_highlightImages.isNotEmpty) {
+        left = _clamp(
+            _calculateLeftOffset(), 12, MediaQuery.of(context).size.width - 12);
+        isAbove = _calculateIsAboveTooltip(tooltipHeight);
+      }
+      return ControllerProvider(
+        spotlightController: spotlightController,
+        child: AnimatedBuilder(
+          animation: _animationController,
+          builder: (context, snapshot) {
+            return Stack(
+              children: [
+                widget.child,
+                GestureDetector(
+                  onTap: () => spotlightController.nextStep(),
+                  child: Container(
+                    color: Colors.black.withOpacity(0.7), //TODO вынести
+                  ),
                 ),
-              ),
-              ..._buildHighlightWidgets(),
-              if (_highlightImages.isNotEmpty) ...[
-                _buildArrowWidget(isAbove, left),
-                _buildTooltipWidget(isAbove, tooltipHeight),
-              ]
-            ],
-          );
-        },
-      ),
-    );
+                ..._buildHighlightWidgets(),
+                if (_highlightImages.isNotEmpty) ...[
+                  _buildArrowWidget(isAbove, left),
+                  _buildTooltipWidget(isAbove, tooltipHeight),
+                ]
+              ],
+            );
+          },
+        ),
+      );
+    } else {
+      return widget.child;
+    }
   }
 
   @override
