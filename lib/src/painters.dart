@@ -7,7 +7,7 @@ class ImagePainter extends CustomPainter {
   final ui.Image image;
   final double pixelRatio;
 
-  ImagePainter(this.image, this.offset, {this.pixelRatio = 3.0});
+  ImagePainter(this.image, this.offset, {this.pixelRatio = 5.0});
 
   @override
   void paint(Canvas canvas, Size size) {

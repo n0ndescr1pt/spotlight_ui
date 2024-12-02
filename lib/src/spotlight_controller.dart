@@ -7,9 +7,14 @@ class SpotlightController {
   //final StreamManager streamManager = StreamManager();
   final ValueNotifier<int> currentStep = ValueNotifier<int>(0);
 
+  final ValueNotifier<bool> isEnabled;
 
-  SpotlightController();
+  SpotlightController({bool isEnable = true})
+      : isEnabled = ValueNotifier(isEnable);
 
+  void disableOnboarding() {
+    isEnabled.value = false;
+  }
 
   void nextStep() {
     if (currentStep.value < steps.length - 1) {

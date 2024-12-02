@@ -50,7 +50,7 @@ class TooltipWidget extends StatelessWidget {
               ),
               SizedBox(height: spacing ?? 0),
               GestureDetector(
-                onTap: () {},
+                onTap: controller?.disableOnboarding,
                 child: skipButton ?? const SizedBox.shrink(),
               ),
             ],

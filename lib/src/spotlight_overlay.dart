@@ -12,10 +12,9 @@ class SpotlightOverlay extends StatefulWidget {
   final Duration animationDuration;
   final Duration scrollAnimationDuration;
   final ArrowSettings arrowSettings;
-  final bool isEnabled;
+
   const SpotlightOverlay({
     super.key,
-    this.isEnabled = true,
     required this.child,
     required this.spotlightController,
     this.scrollController,
@@ -35,28 +34,34 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
   late SpotlightController spotlightController;
   late AnimationController _animationController;
   late Animation<double> _animation;
-  late bool isEnable;
+  late bool _isEnable;
 
   List<ui.Image> _highlightImages = [];
   List<Offset> _highlightOffsets = [];
   List<Size> _highlightSize = [];
   @override
   void initState() {
-    isEnable = widget.isEnabled;
     steps = widget.spotlightController.steps;
     spotlightController = widget.spotlightController;
-
-    _initHighlight();
-    _buildAnimation();
-    spotlightController.currentStep.addListener(_stepListener);
+    _isEnable = spotlightController.isEnabled.value;
+    if (_isEnable) {
+      print("initing Animation");
+      _initHighlight();
+      _buildAnimation();
+      spotlightController.currentStep.addListener(_stepListener);
+      spotlightController.isEnabled.addListener(() => setState(() {
+            _isEnable = spotlightController.isEnabled.value;
+          }));
+    }
 
     super.initState();
   }
 
   void _initHighlight() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      print("asdasdad${spotlightController.currentStep.value}");
       Future.delayed(
-          const Duration(milliseconds: 900),
+          const Duration(milliseconds: 3700),
           () =>
               _captureHighlightedWidget(spotlightController.currentStep.value));
     });
@@ -74,11 +79,13 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
   }
 
   Future<void> _captureHighlightedWidget(int currentStep) async {
+    print("start Capture");
     final List<ui.Image> images = [];
     final List<Offset> offsets = [];
     final List<Size> sizes = [];
-    await WidgetsBinding.instance.endOfFrame;
+
     await _scrollToHighlightedWidget();
+    await WidgetsBinding.instance.endOfFrame;
     final length = steps[currentStep]?.highlightKeys.length ?? 0;
     for (int i = 0; i < length; i++) {
       final RenderRepaintBoundary? boundary = steps[currentStep]
@@ -90,7 +97,7 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
         final Offset offset = boundary.localToGlobal(Offset.zero);
         final Size size = boundary.size;
 
-        final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+        final ui.Image image = await boundary.toImage(pixelRatio: 5.0);
         images.add(image);
         offsets.add(offset);
         sizes.add(size);
@@ -112,41 +119,54 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
 
     final highlightKeys =
         spotlightController.steps[spotlightController.currentStep.value];
-    final RenderRepaintBoundary? boundary =
-        highlightKeys?.highlightKeys.last.currentContext?.findRenderObject()
-            as RenderRepaintBoundary?;
 
-    if (boundary != null) {
-      final Offset offset = boundary.localToGlobal(Offset.zero);
-      final double targetOffset = offset.dy / 1.3 + controller.offset;
-      final Size size = boundary.size;
+    List<MapEntry<GlobalKey, Offset>> positions = [];
 
-      final double screenHeight = MediaQuery.of(context).size.height;
-      final double highlightBottom = offset.dy + size.height;
-      final toolTipHeight = spotlightController
-              .steps[spotlightController.currentStep.value]?.tooltip.height ??
-          0;
-      print(controller.position.maxScrollExtent);
-      print(controller.offset);
-      print(offset.dy);
-      print("TOOLTIP  $toolTipHeight");
-      if (highlightBottom + toolTipHeight + 20 > screenHeight) {
-        _animationController.reverse(from: 0.0);
+    for (var key in highlightKeys?.highlightKeys ?? <GlobalKey>[]) {
+      final renderBox = key.currentContext?.findRenderObject() as RenderBox?;
+      if (renderBox != null) {
+        final position = renderBox.localToGlobal(Offset.zero);
+        positions.add(MapEntry(key, position));
+      }
+    }
 
-        if (targetOffset > controller.position.maxScrollExtent) {
-          print("scrolling...");
-          await controller.animateTo(
-            controller.position.maxScrollExtent,
-            duration: widget.scrollAnimationDuration,
-            curve: Curves.easeInOut,
-          );
-          //TODO сделать если скролить надо много то количество времени больше
-        } else if (targetOffset > controller.position.pixels) {
-          await controller.animateTo(
-            targetOffset,
-            duration: widget.scrollAnimationDuration,
-            curve: Curves.easeInOut,
-          );
+    if (positions.isNotEmpty) {
+      positions.sort((a, b) => a.value.dy.compareTo(b.value.dy));
+
+      final RenderRepaintBoundary? boundary = positions.first.key.currentContext
+          ?.findRenderObject() as RenderRepaintBoundary?;
+      if (boundary != null) {
+        final Offset offset = boundary.localToGlobal(Offset.zero);
+        final double targetOffset = offset.dy - 20 + controller.offset;
+        final Size size = boundary.size;
+
+        final double screenHeight = MediaQuery.of(context).size.height;
+        final double highlightBottom = offset.dy + size.height;
+        final toolTipHeight = spotlightController
+                .steps[spotlightController.currentStep.value]?.tooltip.height ??
+            0;
+        print(controller.position.maxScrollExtent);
+        print(controller.offset);
+        print(offset.dy);
+        print("TOOLTIP  $toolTipHeight");
+        if (highlightBottom + toolTipHeight + 20 > screenHeight) {
+          _animationController.reverse(from: 0.0);
+
+          if (targetOffset > controller.position.maxScrollExtent) {
+            print("scrolling...");
+            await controller.animateTo(
+              controller.position.maxScrollExtent,
+              duration: widget.scrollAnimationDuration,
+              curve: Curves.easeInOut,
+            );
+            //TODO сделать если скролить надо много то количество времени больше
+          } else if (targetOffset > controller.position.pixels) {
+            await controller.animateTo(
+              targetOffset,
+              duration: widget.scrollAnimationDuration,
+              curve: Curves.easeInOut,
+            );
+          }
         }
       }
     }
@@ -196,18 +216,32 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
     bool isAbove,
     double left,
   ) {
+    final highlightKeys =
+        spotlightController.steps[spotlightController.currentStep.value];
+
+    List<MapEntry<GlobalKey, Offset>> positions = [];
+
+    for (var key in highlightKeys?.highlightKeys ?? <GlobalKey>[]) {
+      final renderBox = key.currentContext?.findRenderObject() as RenderBox?;
+      if (renderBox != null) {
+        final position = renderBox.localToGlobal(Offset.zero);
+        positions.add(MapEntry(key, position));
+      }
+    }
+
+    if (positions.isNotEmpty) {
+      positions.sort((a, b) => a.value.dy.compareTo(b.value.dy));
+    }
     return Positioned(
       top: isAbove
-          ? _highlightOffsets.last.dy - 12
-          : _highlightOffsets.first.dy + _highlightSize.first.height + 4,
+          ? positions.first.value.dy - 12
+          : positions.last.value.dy + _highlightSize.first.height + 4,
       left: left,
       child: FadeTransition(
         opacity: _animation,
         child: CustomPaint(
           size: Size(24, 12),
-          painter: ArrowPainter(
-            isAbove: isAbove,
-          ),
+          painter: ArrowPainter(isAbove: isAbove),
         ),
       ),
     );
@@ -230,7 +264,7 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
 
   @override
   Widget build(BuildContext context) {
-    if (isEnable) {
+    if (_isEnable) {
       final tooltipHeight = spotlightController
               .steps[spotlightController.currentStep.value]?.tooltip.height ??
           0;
