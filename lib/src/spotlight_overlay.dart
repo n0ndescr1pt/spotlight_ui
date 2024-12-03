@@ -12,6 +12,7 @@ class SpotlightOverlay extends StatefulWidget {
   final Duration animationDuration;
   final Duration scrollAnimationDuration;
   final ArrowSettings arrowSettings;
+  final Duration waitBeforeStartDuration;
 
   const SpotlightOverlay({
     super.key,
@@ -22,6 +23,7 @@ class SpotlightOverlay extends StatefulWidget {
     this.scrollAnimationDuration = const Duration(milliseconds: 400),
     this.arrowSettings =
         const ArrowSettings(color: Colors.white, size: Size(24, 12)),
+    this.waitBeforeStartDuration = const Duration(milliseconds: 900),
   });
 
   @override
@@ -59,9 +61,8 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
 
   void _initHighlight() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      print("asdasdad${spotlightController.currentStep.value}");
       Future.delayed(
-          const Duration(milliseconds: 3700),
+          widget.waitBeforeStartDuration,
           () =>
               _captureHighlightedWidget(spotlightController.currentStep.value));
     });
@@ -97,7 +98,7 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
         final Offset offset = boundary.localToGlobal(Offset.zero);
         final Size size = boundary.size;
 
-        final ui.Image image = await boundary.toImage(pixelRatio: 5.0);
+        final ui.Image image = await boundary.toImage(pixelRatio: 6.0);
         images.add(image);
         offsets.add(offset);
         sizes.add(size);
@@ -149,7 +150,7 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
         print(controller.offset);
         print(offset.dy);
         print("TOOLTIP  $toolTipHeight");
-        if (highlightBottom + toolTipHeight + 20 > screenHeight) {
+        if (highlightBottom + toolTipHeight +100 > screenHeight) {
           _animationController.reverse(from: 0.0);
 
           if (targetOffset > controller.position.maxScrollExtent) {
@@ -162,7 +163,7 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
             //TODO сделать если скролить надо много то количество времени больше
           } else if (targetOffset > controller.position.pixels) {
             await controller.animateTo(
-              targetOffset,
+              targetOffset-25,
               duration: widget.scrollAnimationDuration,
               curve: Curves.easeInOut,
             );
@@ -184,7 +185,7 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
     }
     offset /= _highlightOffsets.length;
     size /= _highlightSize.length;
-    return offset + size / 2 - 12;
+    return offset + size / 2 - 13;
   }
 
   bool _calculateIsAboveTooltip(double tooltipHeight) {
@@ -235,12 +236,12 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
     return Positioned(
       top: isAbove
           ? positions.first.value.dy - 12
-          : positions.last.value.dy + _highlightSize.first.height + 4,
-      left: left,
+          : positions.last.value.dy + _highlightSize.first.height + 8,
+      left: left + 6,
       child: FadeTransition(
         opacity: _animation,
         child: CustomPaint(
-          size: Size(24, 12),
+          size: Size(14, 8),
           painter: ArrowPainter(isAbove: isAbove),
         ),
       ),
@@ -248,7 +249,6 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
   }
 
   Widget _buildTooltipWidget(bool isAbove, double tooltipHeight) {
-    print("      asdfsdfsdfs$tooltipHeight");
     return Positioned(
       top: isAbove
           ? _highlightOffsets.last.dy - tooltipHeight - 12
@@ -272,7 +272,7 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
       double left = 0;
       if (_highlightImages.isNotEmpty) {
         left = _clamp(
-            _calculateLeftOffset(), 12, MediaQuery.of(context).size.width - 12);
+            _calculateLeftOffset(), 24, MediaQuery.of(context).size.width - 50);
         isAbove = _calculateIsAboveTooltip(tooltipHeight);
       }
       return ControllerProvider(
