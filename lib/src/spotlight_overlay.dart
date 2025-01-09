@@ -47,7 +47,6 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
     spotlightController = widget.spotlightController;
     _isEnable = spotlightController.isEnabled.value;
     if (_isEnable) {
-      print("initing Animation");
       _initHighlight();
       _buildAnimation();
       spotlightController.currentStep.addListener(_stepListener);
@@ -80,7 +79,6 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
   }
 
   Future<void> _captureHighlightedWidget(int currentStep) async {
-    print("start Capture");
     final List<ui.Image> images = [];
     final List<Offset> offsets = [];
     final List<Size> sizes = [];
@@ -146,21 +144,15 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
         final toolTipHeight = spotlightController
                 .steps[spotlightController.currentStep.value]?.tooltip.height ??
             0;
-        print(controller.position.maxScrollExtent);
-        print(controller.offset);
-        print(offset.dy);
-        print("TOOLTIP  $toolTipHeight");
         if (highlightBottom + toolTipHeight +100 > screenHeight) {
           _animationController.reverse(from: 0.0);
 
           if (targetOffset > controller.position.maxScrollExtent) {
-            print("scrolling...");
             await controller.animateTo(
               controller.position.maxScrollExtent,
               duration: widget.scrollAnimationDuration,
               curve: Curves.easeInOut,
             );
-            //TODO сделать если скролить надо много то количество времени больше
           } else if (targetOffset > controller.position.pixels) {
             await controller.animateTo(
               targetOffset-25,
@@ -195,7 +187,6 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
                 tooltipHeight +
                 20 >
             MediaQuery.of(context).size.height) {
-      print("true");
       return true;
     }
     return false;
@@ -241,7 +232,7 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
       child: FadeTransition(
         opacity: _animation,
         child: CustomPaint(
-          size: Size(14, 8),
+          size: const Size(14, 8),
           painter: ArrowPainter(isAbove: isAbove),
         ),
       ),

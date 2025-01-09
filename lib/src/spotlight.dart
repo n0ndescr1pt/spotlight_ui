@@ -16,7 +16,6 @@ class Spotlight extends StatefulWidget {
   @override
   State<Spotlight> createState() => _SpotlightState();
 }
-
 class _SpotlightState extends State<Spotlight> {
   final GlobalKey _key = GlobalKey();
   @override

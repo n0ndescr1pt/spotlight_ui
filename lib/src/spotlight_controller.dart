@@ -37,7 +37,7 @@ class SpotlightController {
       () => SpotlightStep(
         highlightKeys: [],
         tooltip: tooltip ??
-            TooltipWidget(
+            const TooltipWidget(
               height: 200,
             ), // TODO Установить дефолтный тултип
       ),
