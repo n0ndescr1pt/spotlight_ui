@@ -23,7 +23,7 @@ class SpotlightOverlay extends StatefulWidget {
     this.scrollAnimationDuration = const Duration(milliseconds: 400),
     this.arrowSettings =
         const ArrowSettings(color: Colors.white, size: Size(24, 12)),
-    this.waitBeforeStartDuration = const Duration(milliseconds: 900),
+    this.waitBeforeStartDuration = const Duration(milliseconds: 600),
   });
 
   @override
@@ -54,7 +54,6 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
             _isEnable = spotlightController.isEnabled.value;
           }));
     }
-
     super.initState();
   }
 
@@ -75,7 +74,18 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
   }
 
   void _stepListener() {
-    _captureHighlightedWidget(spotlightController.currentStep.value);
+    if (spotlightController.currentStep.value >= 0) {
+      if (spotlightController.currentStep.value == 0) {
+        _initHighlight();
+      }
+      _captureHighlightedWidget(spotlightController.currentStep.value);
+    } else {
+      setState(() {
+        _highlightImages.clear();
+        _highlightOffsets.clear();
+        _highlightSize.clear();
+      });
+    }
   }
 
   Future<void> _captureHighlightedWidget(int currentStep) async {
@@ -144,7 +154,7 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
         final toolTipHeight = spotlightController
                 .steps[spotlightController.currentStep.value]?.tooltip.height ??
             0;
-        if (highlightBottom + toolTipHeight +100 > screenHeight) {
+        if (highlightBottom + toolTipHeight + 100 > screenHeight) {
           _animationController.reverse(from: 0.0);
 
           if (targetOffset > controller.position.maxScrollExtent) {
@@ -155,7 +165,7 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
             );
           } else if (targetOffset > controller.position.pixels) {
             await controller.animateTo(
-              targetOffset-25,
+              targetOffset - 25,
               duration: widget.scrollAnimationDuration,
               curve: Curves.easeInOut,
             );
@@ -255,7 +265,7 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
 
   @override
   Widget build(BuildContext context) {
-    if (_isEnable) {
+    if (_isEnable && spotlightController.currentStep.value >= 0) {
       final tooltipHeight = spotlightController
               .steps[spotlightController.currentStep.value]?.tooltip.height ??
           0;

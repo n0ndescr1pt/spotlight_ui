@@ -4,13 +4,14 @@ import 'package:spotlight_ui/spotlight_ui.dart';
 
 class SpotlightController {
   final Map<int, SpotlightStep> steps = {};
-  //final StreamManager streamManager = StreamManager();
-  final ValueNotifier<int> currentStep = ValueNotifier<int>(0);
-
+  final ValueNotifier<int> currentStep;
   final ValueNotifier<bool> isEnabled;
 
-  SpotlightController({bool isEnable = true})
-      : isEnabled = ValueNotifier(isEnable);
+  SpotlightController({
+    bool isEnable = true,
+    int initialPosition = -1,
+  })  : isEnabled = ValueNotifier(isEnable),
+        currentStep = ValueNotifier(initialPosition);
 
   void disableOnboarding() {
     isEnabled.value = false;
@@ -26,6 +27,14 @@ class SpotlightController {
     if (currentStep.value > 0) {
       currentStep.value--;
     }
+  }
+
+  void start() {
+    currentStep.value = 0;
+  }
+
+  void stop() {
+    currentStep.value = -1;
   }
 
   void addStep(int step, GlobalKey key, {TooltipWidget? tooltip}) {
