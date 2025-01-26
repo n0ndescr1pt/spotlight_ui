@@ -6,6 +6,7 @@ import 'package:spotlight_ui/src/highlight_storage.dart';
 import 'package:spotlight_ui/src/painters.dart';
 import 'package:spotlight_ui/src/spotlight_controller.dart';
 
+/// Widget that provides an overlay for the onboarding spotlight.
 class SpotlightOverlay extends StatefulWidget {
   final Widget child;
   final ScrollController? scrollController;
@@ -14,6 +15,7 @@ class SpotlightOverlay extends StatefulWidget {
   final Duration scrollAnimationDuration;
   final ArrowSettings arrowSettings;
   final Duration waitBeforeStartDuration;
+  final double scrollOffset;
 
   const SpotlightOverlay({
     super.key,
@@ -25,6 +27,7 @@ class SpotlightOverlay extends StatefulWidget {
     this.arrowSettings =
         const ArrowSettings(color: Colors.white, size: Size(24, 12)),
     this.waitBeforeStartDuration = const Duration(milliseconds: 600),
+    this.scrollOffset = 0,
   });
 
   @override
@@ -44,21 +47,22 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
 
   @override
   void initState() {
+    super.initState();
     steps = widget.spotlightController.steps;
     spotlightController = widget.spotlightController;
     _isEnable = spotlightController.isEnabled.value;
     if (_isEnable) {
-      _initHighlight();
-      _buildAnimation();
+      _initializeHighlightProcess();
+      _initializeAnimation();
       spotlightController.currentStep.addListener(_stepListener);
       spotlightController.isEnabled.addListener(() => setState(() {
             _isEnable = spotlightController.isEnabled.value;
           }));
     }
-    super.initState();
   }
 
-  void _initHighlight() {
+  /// Initializes the highlight process by capturing the first widget.
+  void _initializeHighlightProcess() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future.delayed(
           widget.waitBeforeStartDuration,
@@ -67,17 +71,19 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
     });
   }
 
-  void _buildAnimation() {
+  /// Builds the animation controller and its curve.
+  void _initializeAnimation() {
     _animationController =
         AnimationController(vsync: this, duration: widget.animationDuration);
     _animation = CurvedAnimation(
         parent: _animationController, curve: const Interval(0.0, 1.0));
   }
 
+  /// Listener that updates the highlighted widget when the step changes.
   void _stepListener() {
     if (spotlightController.currentStep.value >= 0) {
       if (spotlightController.currentStep.value == 0) {
-        _initHighlight();
+        _initializeHighlightProcess();
       }
       _captureHighlightedWidget(spotlightController.currentStep.value);
     } else {
@@ -87,6 +93,7 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
     }
   }
 
+  /// Captures the currently highlighted widget and stores its properties.
   Future<void> _captureHighlightedWidget(int currentStep) async {
     final List<ui.Image> images = [];
     final List<Offset> offsets = [];
@@ -121,6 +128,7 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
     _animationController.forward(from: 0.0);
   }
 
+  /// Scrolls to the widget currently being highlighted.
   Future<void> _scrollToHighlightedWidget() async {
     final ScrollController? controller = widget.scrollController;
     if (controller == null) return;
@@ -145,7 +153,8 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
           ?.findRenderObject() as RenderRepaintBoundary?;
       if (boundary != null) {
         final Offset offset = boundary.localToGlobal(Offset.zero);
-        final double targetOffset = offset.dy - 20 + controller.offset;
+        final double targetOffset =
+            offset.dy - 20 + controller.offset - widget.scrollOffset;
         final Size size = boundary.size;
 
         final double screenHeight = MediaQuery.of(context).size.height;
@@ -174,10 +183,12 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
     }
   }
 
+  /// Clamps a value between a minimum and maximum range.
   double _clamp(double value, double min, double max) {
     return value.clamp(min, max);
   }
 
+  /// Calculates the horizontal offset for tooltip placement.
   double _calculateLeftOffset() {
     double offset = 0, size = 0;
     for (int i = 0; i < _highlightsStorage.images.length; i++) {
@@ -189,6 +200,7 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
     return offset + size / 2 - 13;
   }
 
+  /// Determines if the tooltip should be displayed above the highlighted widget.
   bool _calculateIsAboveTooltip(double tooltipHeight) {
     if (_highlightsStorage.images.isNotEmpty &&
         _highlightsStorage.offsets.first.dy +
@@ -201,6 +213,7 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
     return false;
   }
 
+  /// Builds the highlight widgets.
   List<Widget> _buildHighlightWidgets() {
     return List.generate(_highlightsStorage.images.length, (index) {
       return FadeTransition(
@@ -215,6 +228,7 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
     });
   }
 
+  /// Builds the arrow widget for the tooltip.
   Widget _buildArrowWidget(
     bool isAbove,
     double left,
@@ -250,6 +264,7 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
     );
   }
 
+  /// Builds the tooltip widget.
   Widget _buildTooltipWidget(bool isAbove, double tooltipHeight) {
     return Positioned(
       top: isAbove
