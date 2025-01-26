@@ -1,7 +1,9 @@
+import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:spotlight_ui/spotlight_ui.dart';
-//import 'package:spotlight_ui/src/stream_manager.dart';
+import 'package:spotlight_ui/src/controller_provider.dart';
 
+part 'spotlight.dart';
 class SpotlightController {
   final Map<int, SpotlightStep> steps = {};
   final ValueNotifier<int> currentStep;
@@ -37,21 +39,16 @@ class SpotlightController {
     currentStep.value = -1;
   }
 
-  void addStep(int step, GlobalKey key, {TooltipWidget? tooltip}) {
+   void _addStep(int step, GlobalKey key, {TooltipWidget? tooltip}) {
     if (step < 0) {
       throw ArgumentError('Step must be non-negative');
     }
+
     final spotlightStep = steps.putIfAbsent(
       step,
       () => SpotlightStep(
-        highlightKeys: [],
-        tooltip: tooltip ??
-            const TooltipWidget(
-              height: 200,
-            ), // TODO Установить дефолтный тултип
-      ),
+          highlightKeys: [], tooltip: tooltip ?? defaultTooltip()),
     );
-    //streamManager.addData(true);///TODO
     spotlightStep.highlightKeys.add(key);
   }
 }

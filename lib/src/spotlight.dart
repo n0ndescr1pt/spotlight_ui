@@ -1,6 +1,4 @@
-import 'package:flutter/material.dart';
-import 'package:spotlight_ui/spotlight_ui.dart';
-import 'package:spotlight_ui/src/controller_provider.dart';
+part of 'spotlight_controller.dart';
 
 class Spotlight extends StatefulWidget {
   final int step;
@@ -16,14 +14,14 @@ class Spotlight extends StatefulWidget {
   @override
   State<Spotlight> createState() => _SpotlightState();
 }
+
 class _SpotlightState extends State<Spotlight> {
   final GlobalKey _key = GlobalKey();
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final controller = ControllerProvider.of(context)?.spotlightController;
-
-      controller?.addStep(widget.step, _key, tooltip: widget.tooltip);
+      controller?._addStep(widget.step, _key, tooltip: widget.tooltip);
     });
     super.initState();
   }

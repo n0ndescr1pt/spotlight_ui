@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:spotlight_ui/spotlight_ui.dart';
 import 'package:spotlight_ui/src/controller_provider.dart';
 
@@ -61,5 +60,41 @@ class TooltipWidget extends StatelessWidget {
   }
 }
 
-
-///final TooltipWidget = 
+TooltipWidget defaultTooltip() {
+  return TooltipWidget(
+    height: 150,
+    nextStepButton: TooltipButton(
+      borderRadius: BorderRadius.circular(28),
+      backgroundColor: const Color.fromARGB(255, 206, 255, 0),
+      width: double.infinity,
+      child: const Center(
+        child: Padding(
+          padding: EdgeInsets.all(8.0),
+          child: Text(
+            "Next",
+          ),
+        ),
+      ),
+    ),
+    skipButton: const TooltipButton(
+      width: double.infinity,
+      child: Center(
+        child: Padding(
+          padding: EdgeInsets.all(8.0),
+          child: Text(
+            "Skip",
+          ),
+        ),
+      ),
+    ),
+    backgroundColor: Colors.white,
+    child: const Column(
+      children: [
+        Text(
+          "Your description.",
+        ),
+        SizedBox(height: 12)
+      ],
+    ),
+  );
+}

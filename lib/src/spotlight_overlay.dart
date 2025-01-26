@@ -2,6 +2,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:spotlight_ui/src/controller_provider.dart';
+import 'package:spotlight_ui/src/highlight_storage.dart';
 import 'package:spotlight_ui/src/painters.dart';
 import 'package:spotlight_ui/src/spotlight_controller.dart';
 
@@ -38,9 +39,9 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
   late Animation<double> _animation;
   late bool _isEnable;
 
-  List<ui.Image> _highlightImages = [];
-  List<Offset> _highlightOffsets = [];
-  List<Size> _highlightSize = [];
+  final HighlightStorage _highlightsStorage =
+      HighlightStorage(images: [], offsets: [], size: []);
+
   @override
   void initState() {
     steps = widget.spotlightController.steps;
@@ -81,9 +82,7 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
       _captureHighlightedWidget(spotlightController.currentStep.value);
     } else {
       setState(() {
-        _highlightImages.clear();
-        _highlightOffsets.clear();
-        _highlightSize.clear();
+        _highlightsStorage.clear();
       });
     }
   }
@@ -114,9 +113,9 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
     }
 
     setState(() {
-      _highlightImages = images;
-      _highlightOffsets = offsets;
-      _highlightSize = sizes;
+      _highlightsStorage.images = images;
+      _highlightsStorage.offsets = offsets;
+      _highlightsStorage.size = sizes;
     });
 
     _animationController.forward(from: 0.0);
@@ -181,19 +180,19 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
 
   double _calculateLeftOffset() {
     double offset = 0, size = 0;
-    for (int i = 0; i < _highlightImages.length; i++) {
-      offset += _highlightOffsets[i].dx;
-      size += _highlightSize[i].width;
+    for (int i = 0; i < _highlightsStorage.images.length; i++) {
+      offset += _highlightsStorage.offsets[i].dx;
+      size += _highlightsStorage.size[i].width;
     }
-    offset /= _highlightOffsets.length;
-    size /= _highlightSize.length;
+    offset /= _highlightsStorage.offsets.length;
+    size /= _highlightsStorage.size.length;
     return offset + size / 2 - 13;
   }
 
   bool _calculateIsAboveTooltip(double tooltipHeight) {
-    if (_highlightImages.isNotEmpty &&
-        _highlightOffsets.first.dy +
-                _highlightSize.first.height +
+    if (_highlightsStorage.images.isNotEmpty &&
+        _highlightsStorage.offsets.first.dy +
+                _highlightsStorage.size.first.height +
                 tooltipHeight +
                 20 >
             MediaQuery.of(context).size.height) {
@@ -203,12 +202,14 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
   }
 
   List<Widget> _buildHighlightWidgets() {
-    return List.generate(_highlightImages.length, (index) {
+    return List.generate(_highlightsStorage.images.length, (index) {
       return FadeTransition(
         opacity: _animation,
         child: CustomPaint(
-          painter:
-              ImagePainter(_highlightImages[index], _highlightOffsets[index]),
+          painter: ImagePainter(
+            _highlightsStorage.images[index],
+            _highlightsStorage.offsets[index],
+          ),
         ),
       );
     });
@@ -237,7 +238,7 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
     return Positioned(
       top: isAbove
           ? positions.first.value.dy - 12
-          : positions.last.value.dy + _highlightSize.first.height + 8,
+          : positions.last.value.dy + _highlightsStorage.size.first.height + 8,
       left: left + 6,
       child: FadeTransition(
         opacity: _animation,
@@ -252,8 +253,10 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
   Widget _buildTooltipWidget(bool isAbove, double tooltipHeight) {
     return Positioned(
       top: isAbove
-          ? _highlightOffsets.last.dy - tooltipHeight - 12
-          : _highlightOffsets.first.dy + _highlightSize.first.height + 16,
+          ? _highlightsStorage.offsets.last.dy - tooltipHeight - 12
+          : _highlightsStorage.offsets.first.dy +
+              _highlightsStorage.size.first.height +
+              16,
       left: 12,
       right: 12,
       child: FadeTransition(
@@ -271,7 +274,7 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
           0;
       bool isAbove = false;
       double left = 0;
-      if (_highlightImages.isNotEmpty) {
+      if (_highlightsStorage.images.isNotEmpty) {
         left = _clamp(
             _calculateLeftOffset(), 24, MediaQuery.of(context).size.width - 50);
         isAbove = _calculateIsAboveTooltip(tooltipHeight);
@@ -287,11 +290,11 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
                 GestureDetector(
                   onTap: () => spotlightController.nextStep(),
                   child: Container(
-                    color: Colors.black.withOpacity(0.7), //TODO вынести
+                    color: const Color.fromARGB(179, 0, 0, 0),
                   ),
                 ),
                 ..._buildHighlightWidgets(),
-                if (_highlightImages.isNotEmpty) ...[
+                if (_highlightsStorage.images.isNotEmpty) ...[
                   _buildArrowWidget(isAbove, left),
                   _buildTooltipWidget(isAbove, tooltipHeight),
                 ]
