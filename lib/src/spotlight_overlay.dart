@@ -24,8 +24,7 @@ class SpotlightOverlay extends StatefulWidget {
     this.scrollController,
     this.animationDuration = const Duration(milliseconds: 400),
     this.scrollAnimationDuration = const Duration(milliseconds: 400),
-    this.arrowSettings =
-        const ArrowSettings(color: Colors.white, size: Size(24, 12)),
+    this.arrowSettings = const ArrowSettings(),
     this.waitBeforeStartDuration = const Duration(milliseconds: 600),
     this.scrollOffset = 0,
   });
@@ -267,8 +266,11 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
       child: FadeTransition(
         opacity: _animation,
         child: CustomPaint(
-          size: const Size(14, 8),
-          painter: ArrowPainter(isAbove: isAbove),
+          size: widget.arrowSettings.size,
+          painter: ArrowPainter(
+            isAbove: isAbove,
+            color: widget.arrowSettings.color,
+          ),
         ),
       ),
     );
