@@ -33,7 +33,7 @@ class SpotlightController {
 
   /// Moves to the next step in the onboarding flow.
   void nextStep() {
-      currentStep.value++;
+    currentStep.value++;
     if (currentStep.value >= steps.length) {
       disableOnboarding();
     }
