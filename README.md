@@ -12,7 +12,7 @@
 - **Lightweight and Performant:** Designed to deliver smooth animations without sacrificing performance.
 - **Flexible:** Use it in any part of your app, from onboarding screens to in-app tutorials.
 
-<img src="assets/demo.gif" alt="Demo" style="max-height: 500px;" />
+<img src="https://raw.githubusercontent.com/n0ndescr1pt/spotlight_ui/main/assets/demo.gif" alt="Demo" style="max-height: 400px;" />
 
 ## Getting Started
 
