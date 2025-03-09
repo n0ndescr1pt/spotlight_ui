@@ -33,15 +33,9 @@ class SpotlightController {
 
   /// Moves to the next step in the onboarding flow.
   void nextStep() {
-    if (currentStep.value < steps.length - 1) {
       currentStep.value++;
-    }
-  }
-
-  /// Moves to the previous step in the onboarding flow.
-  void prevStep() {
-    if (currentStep.value > 0) {
-      currentStep.value--;
+    if (currentStep.value >= steps.length) {
+      disableOnboarding();
     }
   }
 
@@ -64,7 +58,6 @@ class SpotlightController {
     if (step < 0) {
       throw ArgumentError('Step must be non-negative');
     }
-
     final spotlightStep = steps.putIfAbsent(
       step,
       () => SpotlightStep(
