@@ -101,6 +101,8 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
 
     await _scrollToHighlightedWidget();
     await WidgetsBinding.instance.endOfFrame;
+    final listStep = steps.keys.toList();
+    checkConsistent(listStep);
     final length = steps[currentStep]?.highlightKeys.length ?? 0;
     for (int i = 0; i < length; i++) {
       final RenderRepaintBoundary? boundary = steps[currentStep]
@@ -126,6 +128,14 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
     });
 
     _animationController.forward(from: 0.0);
+  }
+
+  void checkConsistent(List<int> listStep) {
+    for (var i = 0; i < steps.length - 1; i++) {
+      if (listStep[i]++ != listStep[i + 1]) {
+        throw Exception("The steps should be consistent");
+      }
+    }
   }
 
   /// Scrolls to the widget currently being highlighted.
@@ -173,7 +183,7 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
             );
           } else if (targetOffset > controller.position.pixels) {
             await controller.animateTo(
-              targetOffset - 25,
+              targetOffset - 20,
               duration: widget.scrollAnimationDuration,
               curve: Curves.easeInOut,
             );
