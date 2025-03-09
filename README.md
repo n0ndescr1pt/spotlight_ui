@@ -12,7 +12,7 @@
 - **Lightweight and Performant:** Designed to deliver smooth animations without sacrificing performance.
 - **Flexible:** Use it in any part of your app, from onboarding screens to in-app tutorials.
 
-![qemu-system-x86_64_x5UhNysP6d](https://github.com/user-attachments/assets/856d49c8-be6d-4d24-b459-eba037e627fe)
+<img src="assets/demo.gif" alt="Demo" style="max-height: 500px;" />
 
 ## Getting Started
 
