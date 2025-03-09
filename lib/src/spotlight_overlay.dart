@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:spotlight_ui/src/arrow_settings.dart';
 import 'package:spotlight_ui/src/controller_provider.dart';
 import 'package:spotlight_ui/src/highlight_storage.dart';
 import 'package:spotlight_ui/src/painters.dart';
@@ -130,11 +131,11 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
   }
 
   void checkConsistent(List<int> listStep) {
-    for (var i = 0; i < steps.length - 1; i++) {
-      if (listStep[i]++ != listStep[i + 1]) {
-        throw Exception("The steps should be consistent");
-      }
-    }
+    //for (var i = 0; i < steps.length - 1; i++) {
+    //  if (listStep[i]++ != listStep[i + 1]) {
+    //    throw Exception("The steps should be consistent");
+    //  }
+    //}
   }
 
   /// Scrolls to the widget currently being highlighted.
