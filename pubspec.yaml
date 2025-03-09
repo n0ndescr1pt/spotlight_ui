@@ -1,6 +1,6 @@
 name: spotlight_ui
 description: "is a Flutter package designed to add eye-catching spotlight effects to your user interface elements."
-version: 0.0.2
+version: 0.0.3
 repository: https://github.com/n0ndescr1pt/spotlight_ui
 
 environment:
