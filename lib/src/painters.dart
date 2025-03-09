@@ -32,12 +32,16 @@ class ImagePainter extends CustomPainter {
 
 class ArrowPainter extends CustomPainter {
   final bool isAbove;
+  final Color color;
 
-  ArrowPainter({this.isAbove = false});
+  ArrowPainter({
+    this.isAbove = false,
+    this.color = Colors.white,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final Paint paint = Paint()..color = Colors.white;
+    final Paint paint = Paint()..color = color;
     final Path path = Path();
 
     if (isAbove) {
@@ -62,6 +66,8 @@ class ArrowSettings {
   final Color color;
   final Size size;
 
-  const ArrowSettings(
-      {this.color = Colors.white, this.size = const Size(24, 12)});
+  const ArrowSettings({
+    this.color = Colors.white,
+    this.size = const Size(24, 12),
+  });
 }
