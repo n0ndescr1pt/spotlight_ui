@@ -14,9 +14,11 @@ class SpotlightOverlay extends StatefulWidget {
   final SpotlightController spotlightController;
   final Duration animationDuration;
   final Duration scrollAnimationDuration;
-  final ArrowSettings arrowSettings;
   final Duration waitBeforeStartDuration;
+  final ArrowSettings arrowSettings;
   final double scrollOffset;
+  final double tooltipPadding;
+  final Color blackoutColor;
 
   const SpotlightOverlay({
     super.key,
@@ -25,9 +27,11 @@ class SpotlightOverlay extends StatefulWidget {
     this.scrollController,
     this.animationDuration = const Duration(milliseconds: 400),
     this.scrollAnimationDuration = const Duration(milliseconds: 400),
-    this.arrowSettings = const ArrowSettings(),
     this.waitBeforeStartDuration = const Duration(milliseconds: 600),
+    this.arrowSettings = const ArrowSettings(),
     this.scrollOffset = 0,
+    this.tooltipPadding = 12,
+    this.blackoutColor = const Color.fromARGB(179, 0, 0, 0),
   });
 
   @override
@@ -163,8 +167,10 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
           ?.findRenderObject() as RenderRepaintBoundary?;
       if (boundary != null) {
         final Offset offset = boundary.localToGlobal(Offset.zero);
-        final double targetOffset =
-            offset.dy - 20 + controller.offset - widget.scrollOffset;
+        final double targetOffset = offset.dy -
+            widget.arrowSettings.size.height +
+            controller.offset -
+            widget.scrollOffset;
         final Size size = boundary.size;
 
         final double screenHeight = MediaQuery.of(context).size.height;
@@ -172,7 +178,7 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
         final toolTipHeight = spotlightController
                 .steps[spotlightController.currentStep.value]?.tooltip.height ??
             0;
-        if (highlightBottom + toolTipHeight + 100 > screenHeight) {
+        if (highlightBottom + toolTipHeight * 1.5 > screenHeight) {
           _animationController.reverse(from: 0.0);
 
           if (targetOffset > controller.position.maxScrollExtent) {
@@ -183,7 +189,7 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
             );
           } else if (targetOffset > controller.position.pixels) {
             await controller.animateTo(
-              targetOffset - 20,
+              targetOffset - widget.arrowSettings.size.height,
               duration: widget.scrollAnimationDuration,
               curve: Curves.easeInOut,
             );
@@ -207,7 +213,7 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
     }
     offset /= _highlightsStorage.offsets.length;
     size /= _highlightsStorage.size.length;
-    return offset + size / 2 - 13;
+    return offset + size / 2 - widget.tooltipPadding;
   }
 
   /// Determines if the tooltip should be displayed above the highlighted widget.
@@ -216,7 +222,8 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
         _highlightsStorage.offsets.first.dy +
                 _highlightsStorage.size.first.height +
                 tooltipHeight +
-                20 >
+                widget.arrowSettings.size.height +
+                widget.tooltipPadding >
             MediaQuery.of(context).size.height) {
       return true;
     }
@@ -261,9 +268,11 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
     }
     return Positioned(
       top: isAbove
-          ? positions.first.value.dy - 12
-          : positions.last.value.dy + _highlightsStorage.size.first.height + 8,
-      left: left + 6,
+          ? positions.first.value.dy - widget.arrowSettings.size.height
+          : positions.last.value.dy +
+              _highlightsStorage.size.first.height +
+              widget.arrowSettings.size.height,
+      left: left,
       child: FadeTransition(
         opacity: _animation,
         child: CustomPaint(
@@ -281,12 +290,14 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
   Widget _buildTooltipWidget(bool isAbove, double tooltipHeight) {
     return Positioned(
       top: isAbove
-          ? _highlightsStorage.offsets.last.dy - tooltipHeight - 12
+          ? _highlightsStorage.offsets.last.dy -
+              tooltipHeight -
+              widget.arrowSettings.size.height
           : _highlightsStorage.offsets.first.dy +
               _highlightsStorage.size.first.height +
-              16,
-      left: 12,
-      right: 12,
+              widget.arrowSettings.size.height,
+      left: widget.tooltipPadding,
+      right: widget.tooltipPadding,
       child: FadeTransition(
           opacity: _animation,
           child: spotlightController
@@ -303,8 +314,8 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
       bool isAbove = false;
       double left = 0;
       if (_highlightsStorage.images.isNotEmpty) {
-        left = _clamp(
-            _calculateLeftOffset(), 24, MediaQuery.of(context).size.width - 50);
+        left = _clamp(_calculateLeftOffset(), widget.arrowSettings.size.width,
+            MediaQuery.of(context).size.width - 50);
         isAbove = _calculateIsAboveTooltip(tooltipHeight);
       }
       return ControllerProvider(
@@ -318,7 +329,7 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
                 GestureDetector(
                   onTap: () => spotlightController.nextStep(),
                   child: Container(
-                    color: const Color.fromARGB(179, 0, 0, 0),
+                    color: widget.blackoutColor,
                   ),
                 ),
                 ..._buildHighlightWidgets(),
