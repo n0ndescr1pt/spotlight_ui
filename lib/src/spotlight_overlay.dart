@@ -269,8 +269,7 @@ class _SpotlightOverlayState extends State<SpotlightOverlay>
     return Positioned(
       top: isAbove
           ? positions.first.value.dy - widget.arrowSettings.size.height
-          : positions.last.value.dy +
-              _highlightsStorage.size.first.height,
+          : positions.last.value.dy + _highlightsStorage.size.first.height,
       left: left,
       child: FadeTransition(
         opacity: _animation,
